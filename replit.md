@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo using TypeScript. Contains a mobile app (Expo) for BOOOMERANGS clothing brand.
 
 ## Stack
 
@@ -15,6 +15,26 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+
+## Artifacts
+
+### BOOOMERANGS Mobile App (`artifacts/booomerangs`)
+- **Type**: Expo (React Native + TypeScript)
+- **Preview path**: `/`
+- **Backend**: https://booomerangs.ru/api (external, not managed here)
+- **Auth**: httpOnly cookies via axios withCredentials
+- **Storage**: expo-secure-store for sessionId (cart), AsyncStorage for favorites
+- **Theme**: Dark (#000000 bg, #ffffff foreground, #111111 cards)
+- **Navigation**: 4 tabs (Каталог, Корзина, Избранное, Профиль) + product/[id], orders, checkout screens
+
+### Key Files
+- `app/_layout.tsx` — Root layout with providers (Auth, Favorites, Cart, QueryClient)
+- `app/(tabs)/_layout.tsx` — Tab bar config with cart badge
+- `context/AuthContext.tsx` — Auth state (login/register/logout via cookies)
+- `context/CartContext.tsx` — Cart state with sessionId logic (guest vs logged-in)
+- `context/FavoritesContext.tsx` — Favorites persisted via AsyncStorage
+- `lib/api.ts` — axios instance pointing to https://booomerangs.ru/api
+- `lib/types.ts` — TypeScript types + formatPrice helper
 
 ## Key Commands
 

@@ -1,0 +1,101 @@
+Создай мобильное приложение на Expo (React Native + TypeScript) для интернет-магазина одежды BOOOMERANGS (российский бренд из Тулы).
+
+Бэкенд уже готов, работает по адресу https://booomerangs.ru/api. Менять бэкенд не нужно вообще.
+
+Авторизация: на сервере используются httpOnly cookies + JWT. В мобильном приложении использовать библиотеку @react-native-cookies/cookies для автоматического сохранения и отправки cookies. Bearer-токены не нужны, бэкенд не трогать.
+
+Стек:
+
+Expo Router (файловая навигация)
+TanStack Query v5 (запросы к API)
+axios (HTTP-клиент)
+@react-native-cookies/cookies (поддержка cookie)
+expo-secure-store (хранение sessionId для корзины)
+react-native-safe-area-context
+@react-navigation/bottom-tabs
+Экраны:
+
+(tabs)/index.tsx — Каталог товаров. Сетка карточек, фильтр по категориям сверху. Поиск.
+(tabs)/cart.tsx — Корзина. Список товаров, количество, итого, кнопка "Оформить заказ".
+(tabs)/profile.tsx — Профиль. Если не авторизован — форма входа/регистрации. Если авторизован — имя, email, кнопка выйти.
+(tabs)/favorites.tsx — Избранное.
+product/[id].tsx — Страница товара. Фото, название, цена, выбор размера и цвета, кнопка в корзину.
+orders.tsx — История заказов пользователя.
+checkout.tsx — Оформление заказа. Форма с именем, телефоном, адресом.
+API-эндпоинты (все GET без авторизации, кроме отмеченных):
+
+GET  /api/products                     — каталог (возвращает { products: [...] })
+GET  /api/products/:id                 — товар
+GET  /api/categories                   — категории
+GET  /api/cart/:sessionId              — корзина по sessionId
+POST /api/cart                         — добавить в корзину { sessionId, productId, size, color, quantity }
+PATCH /api/cart/:id                    — изменить количество { quantity }
+DELETE /api/cart/:id                   — удалить из корзины
+POST /api/auth/login                   — вход { email, password } → устанавливает cookie
+POST /api/auth/register                — регистрация { name, email, password }
+GET  /api/auth/me                      — текущий пользователь (требует cookie) → { user }
+POST /api/auth/logout                  — выход
+GET  /api/orders/user/:userId          — заказы пользователя (требует cookie)
+POST /api/orders                       — создать заказ
+GET  /api/products/:id/variants        — варианты товара (цвета)
+GET  /api/page-settings/home           — настройки главной страницы
+
+Структура корзины:
+Для гостей генерировать UUID при первом запуске и сохранять через expo-secure-store как session_id. После авторизации использовать user_{userId} как sessionId.
+
+Дизайн:
+
+Тёмная тема: фон #000000, карточки #111111, акцент #ffffff
+Минималистичный стиль, без лишних элементов
+Шрифт системный (San Francisco на iOS, Roboto на Android)
+Нижняя навигация: Каталог, Корзина (с бейджем количества), Избранное, Профиль
+Формат товара из API:
+
+{
+  "id": 123,
+  "name": "Название",
+  "price": 290000,
+  "imageUrl": "https://...",
+  "thumbnailUrl": "https://...",
+  "sizes": ["XS","S","M","L","XL"],
+  "color": "Чёрный",
+  "sku": "ABC-001",
+  "category": "clothing",
+  "subcategory": "hoodies"
+}
+
+Цена хранится в копейках — делить на 100 для отображения. Например: 290000 / 100 = 2900 ₽
+
+app.json:
+
+{
+  "expo": {
+    "name": "BOOOMERANGS",
+    "slug": "booomerangs-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "bundleIdentifier": "ru.booomerangs.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "ru.booomerangs.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000"
+      }
+    }
+  }
+}
+
+Важно:
+
+Не создавай mock-данные — только реальные запросы к https://booomerangs.ru/api
+Все тексты на русском языке
+Цены отображать в формате 2 900 ₽
+Показывать состояния загрузки (ActivityIndicator) и ошибок
+Приложение должно работать на iOS и Android

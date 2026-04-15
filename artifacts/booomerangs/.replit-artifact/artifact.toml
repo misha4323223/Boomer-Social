@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "BOOOMERANGS"
+version = "1.0.0"
+id = "artifacts/booomerangs"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 18672
+
+[services.development]
+run = "pnpm --filter @workspace/booomerangs run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/booomerangs", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/booomerangs", "run", "serve" ]
+
+[services.env]
+PORT = "18672"
+BASE_PATH = "/"
