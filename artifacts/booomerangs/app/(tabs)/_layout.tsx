@@ -10,29 +10,30 @@ import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 
 function NativeTabLayout() {
+  const { totalCount } = useCart();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
         <Icon>
-          <Feather name="grid" size={24} color="#fff" />
+          <Feather name="grid" size={24} color="#ffffff" />
         </Icon>
         <Label>Каталог</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="cart">
         <Icon>
-          <Feather name="shopping-cart" size={24} color="#fff" />
+          <Feather name="shopping-cart" size={24} color="#ffffff" />
         </Icon>
         <Label>Корзина</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="favorites">
         <Icon>
-          <Feather name="heart" size={24} color="#fff" />
+          <Feather name="heart" size={24} color="#ffffff" />
         </Icon>
         <Label>Избранное</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon>
-          <Feather name="user" size={24} color="#fff" />
+          <Feather name="user" size={24} color="#ffffff" />
         </Icon>
         <Label>Профиль</Label>
       </NativeTabs.Trigger>
@@ -49,8 +50,8 @@ function ClassicTabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.foreground,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor: "#ffffff",
+        tabBarInactiveTintColor: "#666666",
         headerShown: true,
         headerStyle: { backgroundColor: "#000000" },
         headerTintColor: "#ffffff",
@@ -59,7 +60,7 @@ function ClassicTabLayout() {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : "#000000",
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: "#222222",
           elevation: 0,
           ...(isWeb ? { height: 84 } : {}),
         },
@@ -71,9 +72,7 @@ function ClassicTabLayout() {
               style={StyleSheet.absoluteFill}
             />
           ) : isWeb ? (
-            <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: "#000000" }]}
-            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000000" }]} />
           ) : null,
         tabBarLabelStyle: {
           fontSize: 11,
@@ -92,8 +91,8 @@ function ClassicTabLayout() {
             letterSpacing: 1,
             color: "#ffffff",
           },
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="grid" size={size ?? 22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="grid" size={22} color={color} />
           ),
         }}
       />
@@ -108,8 +107,8 @@ function ClassicTabLayout() {
             fontSize: 10,
             fontWeight: "700",
           },
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="shopping-cart" size={size ?? 22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="shopping-cart" size={22} color={color} />
           ),
         }}
       />
@@ -117,8 +116,8 @@ function ClassicTabLayout() {
         name="favorites"
         options={{
           title: "Избранное",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="heart" size={size ?? 22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="heart" size={22} color={color} />
           ),
         }}
       />
@@ -126,8 +125,8 @@ function ClassicTabLayout() {
         name="profile"
         options={{
           title: "Профиль",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size ?? 22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={22} color={color} />
           ),
         }}
       />

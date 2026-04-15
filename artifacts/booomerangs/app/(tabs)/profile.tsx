@@ -59,6 +59,14 @@ export default function ProfileScreen() {
             <Text style={[styles.menuLabel, { color: colors.foreground }]}>Мои заказы</Text>
             <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
           </Pressable>
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
+            onPress={() => router.push("/chat" as any)}
+          >
+            <Feather name="message-circle" size={20} color={colors.foreground} />
+            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Написать нам</Text>
+            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+          </Pressable>
         </View>
 
         <Pressable
@@ -186,6 +194,16 @@ export default function ProfileScreen() {
               : "Уже есть аккаунт? Войти"}
           </Text>
         </Pressable>
+
+        <Pressable
+          onPress={() => router.push("/chat" as any)}
+          style={[styles.chatLink]}
+        >
+          <Feather name="message-circle" size={16} color={colors.mutedForeground} />
+          <Text style={[styles.switchText, { color: colors.mutedForeground }]}>
+            Написать нам без регистрации
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -299,5 +317,11 @@ const styles = StyleSheet.create({
   },
   switchText: {
     fontSize: 14,
+  },
+  chatLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
   },
 });

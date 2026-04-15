@@ -5,6 +5,10 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import {
+  FontAwesome,
+  Feather,
+} from "@expo/vector-icons";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -43,6 +47,7 @@ function RootLayoutNav() {
       <Stack.Screen name="product/[id]" options={{ title: "", headerBackTitle: "Назад" }} />
       <Stack.Screen name="orders" options={{ title: "Мои заказы" }} />
       <Stack.Screen name="checkout" options={{ title: "Оформление заказа" }} />
+      <Stack.Screen name="chat" options={{ title: "Поддержка" }} />
     </Stack>
   );
 }
@@ -53,6 +58,8 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    ...FontAwesome.font,
+    ...Feather.font,
   });
 
   useEffect(() => {
