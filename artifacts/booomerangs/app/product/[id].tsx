@@ -77,10 +77,13 @@ export default function ProductScreen() {
 
     let sizeToSend: string | undefined = selectedSize ?? undefined;
     if (product.noSize) {
-      if (product.sizeStock && Object.keys(product.sizeStock).length > 0) {
-        sizeToSend = Object.keys(product.sizeStock)[0];
-      } else if (product.sizes && product.sizes.length > 0) {
+      if (product.sizes && product.sizes.length > 0) {
         sizeToSend = product.sizes[0];
+      } else if (product.sizeStock) {
+        const sizeEntry = Object.entries(product.sizeStock).find(
+          ([key, stock]) => key !== "One Size" && stock > 0
+        );
+        if (sizeEntry) sizeToSend = sizeEntry[0];
       }
     }
 
