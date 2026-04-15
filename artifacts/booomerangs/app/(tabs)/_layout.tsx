@@ -3,43 +3,37 @@ import { BlurView } from "expo-blur";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
-import { SymbolView } from "expo-symbols";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
-
-function CartBadge({ count }: { count: number }) {
-  const colors = useColors();
-  if (count === 0) return null;
-  return (
-    <View
-      style={[
-        styles.badge,
-        { backgroundColor: colors.foreground },
-      ]}
-    />
-  );
-}
 
 function NativeTabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
+        <Icon>
+          <Feather name="grid" size={24} color="#fff" />
+        </Icon>
         <Label>Каталог</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="cart">
-        <Icon sf={{ default: "cart", selected: "cart.fill" }} />
+        <Icon>
+          <Feather name="shopping-cart" size={24} color="#fff" />
+        </Icon>
         <Label>Корзина</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="favorites">
-        <Icon sf={{ default: "heart", selected: "heart.fill" }} />
+        <Icon>
+          <Feather name="heart" size={24} color="#fff" />
+        </Icon>
         <Label>Избранное</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
-        <Icon sf={{ default: "person", selected: "person.fill" }} />
+        <Icon>
+          <Feather name="user" size={24} color="#fff" />
+        </Icon>
         <Label>Профиль</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
@@ -48,8 +42,6 @@ function NativeTabLayout() {
 
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const { totalCount } = useCart();
@@ -94,13 +86,15 @@ function ClassicTabLayout() {
         options={{
           title: "Каталог",
           headerTitle: "BOOOMERANGS",
-          headerTitleStyle: { fontSize: 18, fontWeight: "800", letterSpacing: 1, color: "#ffffff" },
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="square.grid.2x2" tintColor={color} size={24} />
-            ) : (
-              <Feather name="grid" size={22} color={color} />
-            ),
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: "800",
+            letterSpacing: 1,
+            color: "#ffffff",
+          },
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="grid" size={size ?? 22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -114,36 +108,27 @@ function ClassicTabLayout() {
             fontSize: 10,
             fontWeight: "700",
           },
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="cart" tintColor={color} size={24} />
-            ) : (
-              <Feather name="shopping-cart" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="shopping-cart" size={size ?? 22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
           title: "Избранное",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="heart" tintColor={color} size={24} />
-            ) : (
-              <Feather name="heart" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="heart" size={size ?? 22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Профиль",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="person" tintColor={color} size={24} />
-            ) : (
-              <Feather name="user" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="user" size={size ?? 22} color={color} />
+          ),
         }}
       />
     </Tabs>
@@ -157,13 +142,4 @@ export default function TabLayout() {
   return <ClassicTabLayout />;
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    position: "absolute",
-    top: -2,
-    right: -6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-});
+const styles = StyleSheet.create({});
