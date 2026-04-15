@@ -345,8 +345,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   logo: {
-    width: 240,
-    height: 96,
+    width: 360,
+    height: 144,
   },
   totalCount: {
     fontSize: 13,
