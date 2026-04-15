@@ -192,7 +192,16 @@ export default function CheckoutScreen() {
       }
 
       const res = await api.post("/orders", body);
-      const paymentUrl = res.data?.paymentUrl ?? res.data?.confirmationUrl ?? res.data?.redirectUrl;
+      console.log("[Checkout] order response:", JSON.stringify(res.data));
+      const paymentUrl =
+        res.data?.paymentUrl ??
+        res.data?.confirmationUrl ??
+        res.data?.redirectUrl ??
+        res.data?.confirmation?.confirmation_url ??
+        res.data?.confirmation?.confirmationUrl ??
+        res.data?.payment?.confirmation?.confirmation_url ??
+        res.data?.payment?.confirmationUrl ??
+        res.data?.payment?.paymentUrl;
 
       await refetchCart();
 
