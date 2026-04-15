@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -21,6 +21,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
+import { getCdekPoint, setCdekPoint, subscribeCdekPoint, type CdekPoint } from "@/lib/cdekStore";
 import { formatPrice } from "@/lib/types";
 
 interface PaymentMethod {
@@ -66,6 +67,16 @@ export default function CheckoutScreen() {
 
   const [agreeOffer, setAgreeOffer] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
+
+  const [cdekPoint, setCdekPointState] = useState<CdekPoint | null>(getCdekPoint);
+
+  useFocusEffect(
+    useCallback(() => {
+      setCdekPointState(getCdekPoint());
+      const unsub = subscribeCdekPoint((p) => setCdekPointState(p));
+      return unsub;
+    }, [])
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +143,11 @@ export default function CheckoutScreen() {
       setError("Заполните все обязательные поля");
       return;
     }
-    if (!selectedCity && deliveryType !== "door") {
+    if (deliveryType === "pickup" && !cdekPoint) {
+      setError("Выберите пункт выдачи СДЭК");
+      return;
+    }
+    if (deliveryType === "door" && !selectedCity) {
       setError("Выберите город доставки");
       return;
     }
@@ -157,7 +172,10 @@ export default function CheckoutScreen() {
         customerName: `${lastName} ${firstName} ${middleName}`.trim(),
         deliveryCost,
       };
-      if (selectedCity) {
+      if (deliveryType === "pickup" && cdekPoint) {
+        body.cdekCityCode = cdekPoint.cityCode;
+        body.cdekPointCode = cdekPoint.code;
+      } else if (selectedCity) {
         body.cdekCityCode = selectedCity.code;
       }
       if (deliveryType === "door" && doorAddress) {
@@ -299,36 +317,85 @@ export default function CheckoutScreen() {
             <Text style={[styles.radioLabel, { color: colors.foreground }]}>СДЭК — доставка до двери</Text>
           </Pressable>
 
-          {/* Поиск города */}
-          <View style={{ marginTop: 8 }}>
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Город доставки</Text>
-            <View style={[styles.searchRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <Feather name="search" size={14} color={colors.mutedForeground} />
-              <TextInput
-                style={[styles.cityInput, { color: colors.foreground }]}
-                placeholder="Начните вводить название города"
-                placeholderTextColor={colors.mutedForeground}
-                value={selectedCity ? selectedCity.city : citySearch}
-                onChangeText={handleCityInput}
-                onFocus={() => { if (selectedCity) { setCitySearch(selectedCity.city); setSelectedCity(null); } }}
-              />
-              {citySearching && <ActivityIndicator size="small" color={colors.mutedForeground} />}
+          {/* Пункт выдачи — только для pickup */}
+          {deliveryType === "pickup" && (
+            <View style={{ marginTop: 4 }}>
+              {cdekPoint ? (
+                <Pressable
+                  style={[styles.pointSelected, { backgroundColor: colors.background, borderColor: "#22c55e" }]}
+                  onPress={() => router.push("/cdek-select" as any)}
+                >
+                  <View style={styles.pointSelectedHeader}>
+                    <View style={[styles.cdekBadge, { backgroundColor: "#00B140" }]}>
+                      <Text style={styles.cdekBadgeText}>СДЭК</Text>
+                    </View>
+                    <Text style={[styles.pointCode, { color: colors.mutedForeground }]}>{cdekPoint.code}</Text>
+                    <Feather name="edit-2" size={14} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
+                  </View>
+                  {cdekPoint.cityName && (
+                    <Text style={[styles.pointCity, { color: colors.mutedForeground }]}>{cdekPoint.cityName}</Text>
+                  )}
+                  <Text style={[styles.pointAddr, { color: colors.foreground }]} numberOfLines={2}>
+                    {cdekPoint.address ?? cdekPoint.name}
+                  </Text>
+                  {cdekPoint.work_time && (
+                    <View style={styles.pointMetaRow}>
+                      <Feather name="clock" size={12} color={colors.mutedForeground} />
+                      <Text style={[styles.pointMetaText, { color: colors.mutedForeground }]}>{cdekPoint.work_time}</Text>
+                    </View>
+                  )}
+                  {cdekPoint.nearest_station && (
+                    <View style={styles.pointMetaRow}>
+                      <Feather name="map-pin" size={12} color={colors.mutedForeground} />
+                      <Text style={[styles.pointMetaText, { color: colors.mutedForeground }]}>{cdekPoint.nearest_station}</Text>
+                    </View>
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={[styles.selectPointBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
+                  onPress={() => router.push("/cdek-select" as any)}
+                >
+                  <Feather name="map-pin" size={16} color={colors.foreground} />
+                  <Text style={[styles.selectPointText, { color: colors.foreground }]}>Выбрать пункт выдачи</Text>
+                  <Feather name="chevron-right" size={16} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
+                </Pressable>
+              )}
             </View>
-            {cityResults.length > 0 && !selectedCity && (
-              <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {cityResults.map((city, idx) => (
-                  <Pressable
-                    key={idx}
-                    style={[styles.dropdownItem, idx < cityResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                    onPress={() => { setSelectedCity(city); setCitySearch(""); setCityResults([]); }}
-                  >
-                    <Text style={[styles.dropdownText, { color: colors.foreground }]}>{city.city}</Text>
-                    {city.region && <Text style={[styles.dropdownSub, { color: colors.mutedForeground }]}>{city.region}</Text>}
-                  </Pressable>
-                ))}
+          )}
+
+          {/* Поиск города — только для door */}
+          {deliveryType === "door" && (
+            <View style={{ marginTop: 8 }}>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Город доставки</Text>
+              <View style={[styles.searchRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <Feather name="search" size={14} color={colors.mutedForeground} />
+                <TextInput
+                  style={[styles.cityInput, { color: colors.foreground }]}
+                  placeholder="Начните вводить название города"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={selectedCity ? selectedCity.city : citySearch}
+                  onChangeText={handleCityInput}
+                  onFocus={() => { if (selectedCity) { setCitySearch(selectedCity.city); setSelectedCity(null); } }}
+                />
+                {citySearching && <ActivityIndicator size="small" color={colors.mutedForeground} />}
               </View>
-            )}
-          </View>
+              {cityResults.length > 0 && !selectedCity && (
+                <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {cityResults.map((city, idx) => (
+                    <Pressable
+                      key={idx}
+                      style={[styles.dropdownItem, idx < cityResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                      onPress={() => { setSelectedCity(city); setCitySearch(""); setCityResults([]); }}
+                    >
+                      <Text style={[styles.dropdownText, { color: colors.foreground }]}>{city.city}</Text>
+                      {city.region && <Text style={[styles.dropdownSub, { color: colors.mutedForeground }]}>{city.region}</Text>}
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
 
           {deliveryType === "door" && (
             <View style={{ marginTop: 8 }}>
@@ -547,4 +614,15 @@ const styles = StyleSheet.create({
   errorText: { color: "#ff3b30", fontSize: 13, textAlign: "center" },
   orderBtn: { height: 56, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
   orderBtnText: { fontSize: 17, fontWeight: "700" },
+  selectPointBtn: { flexDirection: "row", alignItems: "center", gap: 10, height: 54, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16 },
+  selectPointText: { fontSize: 15, fontWeight: "600" },
+  pointSelected: { borderRadius: 12, borderWidth: 2, padding: 12, gap: 6 },
+  pointSelectedHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cdekBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+  cdekBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  pointCode: { fontSize: 12 },
+  pointCity: { fontSize: 12 },
+  pointAddr: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
+  pointMetaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  pointMetaText: { fontSize: 12, flex: 1 },
 });
