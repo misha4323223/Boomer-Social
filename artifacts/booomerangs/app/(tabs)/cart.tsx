@@ -61,7 +61,7 @@ export default function CartScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: 160 + insets.bottom },
+          { paddingBottom: 16 },
         ]}
         renderItem={({ item }) => (
           <View style={[styles.cartItem, { backgroundColor: colors.card }]}>
@@ -124,7 +124,7 @@ export default function CartScreen() {
           {
             backgroundColor: colors.background,
             borderTopColor: colors.border,
-            paddingBottom: insets.bottom + 16,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
           },
         ]}
       >
@@ -238,11 +238,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
     gap: 12,
   },
