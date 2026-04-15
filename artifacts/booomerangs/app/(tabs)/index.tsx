@@ -1,21 +1,26 @@
 import { Feather } from "@expo/vector-icons";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import React, { useCallback, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProductCard } from "@/components/ProductCard";
+import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
 import { Category, Product } from "@/lib/types";
@@ -46,25 +51,48 @@ function parseCategoriesResponse(data: any): Category[] {
   return [];
 }
 
-const HERO_IMAGE = "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
+const HERO_IMAGE =
+  "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
 
 export default function CatalogScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const router = useRouter();
+  const { totalCount } = useCart();
+
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
-  const searchTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drawerAnim = useRef(new Animated.Value(width)).current;
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openDrawer = () => {
+    setDrawerOpen(true);
+    Animated.timing(drawerAnim, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDrawer = () => {
+    Animated.timing(drawerAnim, {
+      toValue: width,
+      duration: 240,
+      useNativeDriver: true,
+    }).start(() => setDrawerOpen(false));
+  };
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      setDebouncedSearch(text);
-    }, 400);
+    searchTimeout.current = setTimeout(() => setDebouncedSearch(text), 400);
   };
 
   const clearSearch = () => {
@@ -84,14 +112,25 @@ export default function CatalogScreen() {
 
   const categories: Category[] = categoriesRaw ?? [];
 
-  const activeCategory = categories.find(
-    (cat) => (cat.slug ?? String(cat.id)) === selectedCategory
-  );
-  const subcategories = activeCategory?.subcategories ?? [];
-
   const handleCategorySelect = (key: string | null) => {
     setSelectedCategory(key);
     setSelectedSubcategory(null);
+  };
+
+  const handleDrawerCategoryPress = (key: string) => {
+    setExpandedCat(expandedCat === key ? null : key);
+  };
+
+  const handleDrawerSubPress = (subName: string, catKey: string) => {
+    setSelectedCategory(catKey);
+    setSelectedSubcategory(subName);
+    closeDrawer();
+  };
+
+  const handleDrawerAllPress = () => {
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+    closeDrawer();
   };
 
   const {
@@ -129,12 +168,9 @@ export default function CatalogScreen() {
   });
 
   const products = data?.pages.flatMap((p) => p.products) ?? [];
-  const total = data?.pages[0]?.pagination.total;
 
   const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleGoToCollection = () => {
@@ -143,6 +179,12 @@ export default function CatalogScreen() {
     setSearch("");
     setDebouncedSearch("");
   };
+
+  const activeFilterLabel = selectedSubcategory
+    ? selectedSubcategory
+    : selectedCategory
+    ? categories.find((c) => (c.slug ?? String(c.id)) === selectedCategory)?.name ?? null
+    : null;
 
   const renderHero = () => (
     <View style={[styles.hero, { width }]}>
@@ -173,145 +215,119 @@ export default function CatalogScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* ── TOP NAVBAR ── */}
       <View
         style={[
-          styles.header,
+          styles.navbar,
           {
-            paddingTop: insets.top,
+            paddingTop: insets.top + 6,
             backgroundColor: colors.background,
-            borderBottomWidth: 1,
             borderBottomColor: colors.border,
           },
         ]}
       >
-        <View
-          style={[
-            styles.searchBar,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Feather name="search" size={16} color={colors.mutedForeground} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.foreground }]}
-            placeholder="Поиск..."
-            placeholderTextColor={colors.mutedForeground}
-            value={search}
-            onChangeText={handleSearchChange}
-            returnKeyType="search"
+        <View style={styles.navInner}>
+          {/* Logo */}
+          <Image
+            source={require("../../assets/boomerangs-logo.webp")}
+            style={styles.navLogo}
+            resizeMode="contain"
           />
-          {search.length > 0 && (
-            <Pressable onPress={clearSearch}>
-              <Feather name="x" size={16} color={colors.mutedForeground} />
-            </Pressable>
-          )}
+
+          {/* Right icons */}
+          <View style={styles.navIcons}>
+            <TouchableOpacity
+              onPress={() => setSearchVisible((v) => !v)}
+              style={styles.navIconBtn}
+            >
+              <Feather
+                name={searchVisible ? "x" : "search"}
+                size={22}
+                color={colors.foreground}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/favorites")}
+              style={styles.navIconBtn}
+            >
+              <Feather name="heart" size={22} color={colors.foreground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/cart")}
+              style={styles.navIconBtn}
+            >
+              <Feather name="shopping-bag" size={22} color={colors.foreground} />
+              {totalCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {totalCount > 9 ? "9+" : totalCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/profile")}
+              style={styles.navIconBtn}
+            >
+              <Feather name="user" size={22} color={colors.foreground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
+              <Feather name="menu" size={24} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
         </View>
-        {categories.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categories}
+
+        {/* Search bar (toggleable) */}
+        {searchVisible && (
+          <View
+            style={[
+              styles.searchBar,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
           >
-            <Pressable
-              onPress={() => handleCategorySelect(null)}
-              style={[
-                styles.catChip,
-                {
-                  backgroundColor: !selectedCategory ? colors.foreground : colors.card,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.catText,
-                  { color: !selectedCategory ? colors.background : colors.mutedForeground },
-                ]}
-              >
-                Все
-              </Text>
-            </Pressable>
-            {categories.map((cat) => {
-              const key = (cat.slug ?? String(cat.id)) as string;
-              const active = selectedCategory === key;
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => handleCategorySelect(active ? null : key)}
-                  style={[
-                    styles.catChip,
-                    {
-                      backgroundColor: active ? colors.foreground : colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.catText,
-                      { color: active ? colors.background : colors.mutedForeground },
-                    ]}
-                  >
-                    {cat.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+            <Feather name="search" size={15} color={colors.mutedForeground} />
+            <TextInput
+              autoFocus
+              style={[styles.searchInput, { color: colors.foreground }]}
+              placeholder="Поиск товаров..."
+              placeholderTextColor={colors.mutedForeground}
+              value={search}
+              onChangeText={handleSearchChange}
+              returnKeyType="search"
+            />
+            {search.length > 0 && (
+              <Pressable onPress={clearSearch}>
+                <Feather name="x" size={15} color={colors.mutedForeground} />
+              </Pressable>
+            )}
+          </View>
         )}
-        {subcategories.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categories}
-          >
-            <Pressable
-              onPress={() => setSelectedSubcategory(null)}
-              style={[
-                styles.subChip,
-                {
-                  backgroundColor: !selectedSubcategory ? colors.foreground : colors.card,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.subText,
-                  { color: !selectedSubcategory ? colors.background : colors.mutedForeground },
-                ]}
-              >
-                Все
+
+        {/* Active filter pill */}
+        {activeFilterLabel && (
+          <View style={styles.activePillRow}>
+            <View style={[styles.activePill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.activePillText, { color: colors.foreground }]}>
+                {activeFilterLabel}
               </Text>
-            </Pressable>
-            {subcategories.map((sub) => {
-              const active = selectedSubcategory === sub.name;
-              return (
-                <Pressable
-                  key={sub.slug}
-                  onPress={() => setSelectedSubcategory(active ? null : sub.name)}
-                  style={[
-                    styles.subChip,
-                    {
-                      backgroundColor: active ? colors.foreground : colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.subText,
-                      { color: active ? colors.background : colors.mutedForeground },
-                    ]}
-                  >
-                    {sub.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+              <Pressable
+                onPress={() => {
+                  setSelectedCategory(null);
+                  setSelectedSubcategory(null);
+                }}
+              >
+                <Feather name="x" size={13} color={colors.mutedForeground} />
+              </Pressable>
+            </View>
+          </View>
         )}
       </View>
 
+      {/* ── PRODUCT LIST ── */}
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.foreground} size="large" />
@@ -321,8 +337,13 @@ export default function CatalogScreen() {
           <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
             Ошибка загрузки товаров
           </Text>
-          <Pressable onPress={() => refetch()} style={[styles.retryBtn, { borderColor: colors.border }]}>
-            <Text style={[styles.retryText, { color: colors.foreground }]}>Повторить</Text>
+          <Pressable
+            onPress={() => refetch()}
+            style={[styles.retryBtn, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.retryText, { color: colors.foreground }]}>
+              Повторить
+            </Text>
           </Pressable>
         </View>
       ) : products.length === 0 ? (
@@ -349,27 +370,245 @@ export default function CatalogScreen() {
           )}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
-          ListHeaderComponent={!selectedCategory && !selectedSubcategory && !debouncedSearch ? renderHero : null}
+          ListHeaderComponent={
+            !selectedCategory && !selectedSubcategory && !debouncedSearch
+              ? renderHero
+              : null
+          }
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* ── FILTER DRAWER ── */}
+      <Modal
+        visible={drawerOpen}
+        transparent
+        animationType="none"
+        onRequestClose={closeDrawer}
+      >
+        {/* Backdrop */}
+        <Pressable style={styles.backdrop} onPress={closeDrawer} />
+
+        {/* Drawer panel */}
+        <Animated.View
+          style={[
+            styles.drawer,
+            {
+              backgroundColor: colors.background,
+              borderLeftColor: colors.border,
+              paddingTop: insets.top,
+              paddingBottom: insets.bottom + 16,
+              transform: [{ translateX: drawerAnim }],
+            },
+          ]}
+        >
+          {/* Drawer header */}
+          <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.drawerTitle, { color: colors.foreground }]}>
+              Фильтр
+            </Text>
+            <TouchableOpacity onPress={closeDrawer}>
+              <Feather name="x" size={22} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+            {/* "All" item */}
+            <TouchableOpacity
+              style={[styles.drawerItem, { borderBottomColor: colors.border }]}
+              onPress={handleDrawerAllPress}
+            >
+              <Text
+                style={[
+                  styles.drawerItemText,
+                  {
+                    color:
+                      !selectedCategory && !selectedSubcategory
+                        ? colors.foreground
+                        : colors.mutedForeground,
+                    fontWeight:
+                      !selectedCategory && !selectedSubcategory ? "700" : "400",
+                  },
+                ]}
+              >
+                Все товары
+              </Text>
+              {!selectedCategory && !selectedSubcategory && (
+                <Feather name="check" size={16} color={colors.foreground} />
+              )}
+            </TouchableOpacity>
+
+            {/* Category accordion */}
+            {categories.map((cat) => {
+              const key = (cat.slug ?? String(cat.id)) as string;
+              const isExpanded = expandedCat === key;
+              const isCatActive =
+                selectedCategory === key && !selectedSubcategory;
+
+              return (
+                <View key={key}>
+                  {/* Category row */}
+                  <TouchableOpacity
+                    style={[
+                      styles.drawerItem,
+                      { borderBottomColor: colors.border },
+                    ]}
+                    onPress={() => handleDrawerCategoryPress(key)}
+                  >
+                    <Text
+                      style={[
+                        styles.drawerItemText,
+                        {
+                          color: isCatActive
+                            ? colors.foreground
+                            : colors.mutedForeground,
+                          fontWeight: isCatActive ? "700" : "500",
+                        },
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                    <View style={styles.drawerItemRight}>
+                      {isCatActive && (
+                        <Feather
+                          name="check"
+                          size={14}
+                          color={colors.foreground}
+                        />
+                      )}
+                      <Feather
+                        name={isExpanded ? "chevron-up" : "chevron-down"}
+                        size={16}
+                        color={colors.mutedForeground}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Subcategories */}
+                  {isExpanded &&
+                    cat.subcategories?.map((sub) => {
+                      const isSubActive = selectedSubcategory === sub.name;
+                      return (
+                        <TouchableOpacity
+                          key={sub.slug}
+                          style={[
+                            styles.drawerSubItem,
+                            { borderBottomColor: colors.border },
+                          ]}
+                          onPress={() => handleDrawerSubPress(sub.name, key)}
+                        >
+                          <View style={[styles.subDot, { backgroundColor: colors.border }]} />
+                          <Text
+                            style={[
+                              styles.drawerSubText,
+                              {
+                                color: isSubActive
+                                  ? colors.foreground
+                                  : colors.mutedForeground,
+                                fontWeight: isSubActive ? "600" : "400",
+                              },
+                            ]}
+                          >
+                            {sub.name}
+                          </Text>
+                          {isSubActive && (
+                            <Feather
+                              name="check"
+                              size={13}
+                              color={colors.foreground}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
+  container: { flex: 1 },
+
+  /* Navbar */
+  navbar: {
     paddingHorizontal: 16,
-    paddingBottom: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  navInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navLogo: {
+    width: 120,
+    height: 44,
+  },
+  navIcons: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
-  totalCount: {
-    fontSize: 13,
+  navIconBtn: {
+    padding: 7,
+    position: "relative",
   },
+  badge: {
+    position: "absolute",
+    top: 3,
+    right: 3,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#000000",
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+  },
+  activePillRow: {
+    flexDirection: "row",
+  },
+  activePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  activePillText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+
+  /* Hero */
   hero: {
     position: "relative",
     height: 500,
@@ -403,80 +642,86 @@ const styles = StyleSheet.create({
     color: "#000000",
     letterSpacing: 0.3,
   },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  categories: {
-    gap: 8,
-    paddingRight: 16,
-  },
-  catChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  catText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  subChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  subText: {
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  list: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    gap: 10,
-  },
-  row: {
-    gap: 10,
-  },
-  cardWrapper: {
-    flex: 1,
-  },
+
+  /* List */
+  row: { gap: 12, paddingHorizontal: 12 },
+  list: { gap: 12, paddingTop: 12 },
+  cardWrapper: { flex: 1 },
+  footerLoader: { padding: 16, alignItems: "center" },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
   },
-  errorText: {
-    fontSize: 15,
-  },
-  emptyText: {
-    fontSize: 15,
-    marginTop: 12,
-  },
+  errorText: { fontSize: 15 },
+  emptyText: { fontSize: 15 },
   retryBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
     borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
-  retryText: {
-    fontSize: 14,
-    fontWeight: "600",
+  retryText: { fontSize: 14 },
+
+  /* Drawer */
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  footerLoader: {
-    paddingVertical: 20,
+  drawer: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: "75%",
+    borderLeftWidth: 1,
+  },
+  drawerHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  drawerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  drawerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  drawerItemText: {
+    fontSize: 15,
+  },
+  drawerItemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  drawerSubItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 36,
+    paddingRight: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  subDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  drawerSubText: {
+    flex: 1,
+    fontSize: 14,
   },
 });
