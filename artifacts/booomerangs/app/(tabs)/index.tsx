@@ -49,6 +49,7 @@ export default function CatalogScreen() {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const searchTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -78,6 +79,16 @@ export default function CatalogScreen() {
 
   const categories: Category[] = categoriesRaw ?? [];
 
+  const activeCategory = categories.find(
+    (cat) => (cat.slug ?? String(cat.id)) === selectedCategory
+  );
+  const subcategories = activeCategory?.subcategories ?? [];
+
+  const handleCategorySelect = (key: string | null) => {
+    setSelectedCategory(key);
+    setSelectedSubcategory(null);
+  };
+
   const {
     data,
     isLoading,
@@ -87,13 +98,14 @@ export default function CatalogScreen() {
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery<ProductsPage>({
-    queryKey: ["products", selectedCategory, debouncedSearch],
+    queryKey: ["products", selectedCategory, selectedSubcategory, debouncedSearch],
     queryFn: async ({ pageParam = 1 }) => {
       const params: Record<string, string | number> = {
         page: pageParam as number,
         limit: PAGE_SIZE,
       };
       if (selectedCategory) params.category = selectedCategory;
+      if (selectedSubcategory) params.subcategory = selectedSubcategory;
       if (debouncedSearch) params.search = debouncedSearch;
       const res = await api.get("/products", { params });
       const products: Product[] = res.data?.products ?? res.data ?? [];
@@ -173,7 +185,7 @@ export default function CatalogScreen() {
             contentContainerStyle={styles.categories}
           >
             <Pressable
-              onPress={() => setSelectedCategory(null)}
+              onPress={() => handleCategorySelect(null)}
               style={[
                 styles.catChip,
                 {
@@ -197,7 +209,7 @@ export default function CatalogScreen() {
               return (
                 <Pressable
                   key={key}
-                  onPress={() => setSelectedCategory(active ? null : key)}
+                  onPress={() => handleCategorySelect(active ? null : key)}
                   style={[
                     styles.catChip,
                     {
@@ -213,6 +225,58 @@ export default function CatalogScreen() {
                     ]}
                   >
                     {cat.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+        {subcategories.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categories}
+          >
+            <Pressable
+              onPress={() => setSelectedSubcategory(null)}
+              style={[
+                styles.subChip,
+                {
+                  backgroundColor: !selectedSubcategory ? colors.foreground : colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.subText,
+                  { color: !selectedSubcategory ? colors.background : colors.mutedForeground },
+                ]}
+              >
+                Все
+              </Text>
+            </Pressable>
+            {subcategories.map((sub) => {
+              const active = selectedSubcategory === sub.slug;
+              return (
+                <Pressable
+                  key={sub.slug}
+                  onPress={() => setSelectedSubcategory(active ? null : sub.slug)}
+                  style={[
+                    styles.subChip,
+                    {
+                      backgroundColor: active ? colors.foreground : colors.card,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.subText,
+                      { color: active ? colors.background : colors.mutedForeground },
+                    ]}
+                  >
+                    {sub.name}
                   </Text>
                 </Pressable>
               );
@@ -315,6 +379,16 @@ const styles = StyleSheet.create({
   catText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  subChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  subText: {
+    fontSize: 12,
+    fontWeight: "400",
   },
   list: {
     paddingHorizontal: 12,
