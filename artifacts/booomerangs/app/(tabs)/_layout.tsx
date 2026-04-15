@@ -85,13 +85,7 @@ function ClassicTabLayout() {
         name="index"
         options={{
           title: "Каталог",
-          headerTitle: "BOOOMERANGS",
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: "800",
-            letterSpacing: 1,
-            color: "#ffffff",
-          },
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Feather name="grid" size={22} color={color} />
           ),

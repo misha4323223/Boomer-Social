@@ -156,11 +156,6 @@ export default function CatalogScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          {total !== undefined && (
-            <Text style={[styles.totalCount, { color: colors.mutedForeground }]}>
-              {total} товаров
-            </Text>
-          )}
         </View>
         <View
           style={[
@@ -345,13 +340,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titleRow: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    width: "100%",
   },
   logo: {
-    width: 160,
-    height: 48,
+    width: 240,
+    height: 96,
   },
   totalCount: {
     fontSize: 13,
