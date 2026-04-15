@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,9 +46,12 @@ function parseCategoriesResponse(data: any): Category[] {
   return [];
 }
 
+const HERO_IMAGE = "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
+
 export default function CatalogScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -132,6 +136,31 @@ export default function CatalogScreen() {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const handleGoToCollection = () => {
+    setSelectedCategory(null);
+    setSelectedSubcategory("Молодость внутри");
+    setSearch("");
+    setDebouncedSearch("");
+  };
+
+  const renderHero = () => (
+    <View style={[styles.hero, { width }]}>
+      <Image
+        source={{ uri: HERO_IMAGE }}
+        style={[styles.heroImage, { width }]}
+        resizeMode="cover"
+      />
+      <View style={styles.heroOverlay} />
+      <Pressable
+        style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.85 }]}
+        onPress={handleGoToCollection}
+      >
+        <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
+        <Feather name="arrow-right" size={16} color="#000000" />
+      </Pressable>
+    </View>
+  );
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -327,6 +356,7 @@ export default function CatalogScreen() {
           )}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
+          ListHeaderComponent={!selectedCategory && !selectedSubcategory && !debouncedSearch ? renderHero : null}
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
         />
@@ -355,6 +385,39 @@ const styles = StyleSheet.create({
   },
   totalCount: {
     fontSize: 13,
+  },
+  hero: {
+    position: "relative",
+    height: 500,
+    marginBottom: 8,
+  },
+  heroImage: {
+    height: 500,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  heroBtn: {
+    position: "absolute",
+    bottom: 32,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 24,
+    paddingVertical: 13,
+    borderRadius: 32,
+  },
+  heroBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#000000",
+    letterSpacing: 0.3,
   },
   searchBar: {
     flexDirection: "row",
