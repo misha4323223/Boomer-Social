@@ -257,11 +257,11 @@ export default function CatalogScreen() {
               </Text>
             </Pressable>
             {subcategories.map((sub) => {
-              const active = selectedSubcategory === sub.slug;
+              const active = selectedSubcategory === sub.name;
               return (
                 <Pressable
                   key={sub.slug}
-                  onPress={() => setSelectedSubcategory(active ? null : sub.slug)}
+                  onPress={() => setSelectedSubcategory(active ? null : sub.name)}
                   style={[
                     styles.subChip,
                     {
