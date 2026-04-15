@@ -208,7 +208,7 @@ export default function CheckoutScreen() {
         res.data?.payment?.confirmationUrl ??
         res.data?.payment?.paymentUrl ??
         (confirmationToken
-          ? `https://booomerangs.ru/assets/pay.html?token=${encodeURIComponent(confirmationToken)}&return_url=${encodeURIComponent(returnUrl)}`
+          ? `https://storage.yandexcloud.net/bmg/yookassa-pay.html?token=${encodeURIComponent(confirmationToken)}&return_url=${encodeURIComponent(returnUrl)}`
           : undefined);
 
       await refetchCart();
