@@ -7,6 +7,7 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -214,7 +215,11 @@ export default function CheckoutScreen() {
       await refetchCart();
 
       if (paymentUrl) {
-        await WebBrowser.openBrowserAsync(paymentUrl);
+        if (Platform.OS === "web") {
+          window.open(paymentUrl, "_blank");
+        } else {
+          await WebBrowser.openBrowserAsync(paymentUrl);
+        }
         router.replace("/(tabs)/");
       } else {
         router.replace("/order-success" as any);
