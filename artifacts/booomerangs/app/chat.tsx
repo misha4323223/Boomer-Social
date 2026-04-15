@@ -155,7 +155,7 @@ export default function ChatScreen() {
         body: JSON.stringify({
           sessionId,
           text,
-          userName: userName ?? user?.name ?? "Гость",
+          userName: `📱 ${userName ?? user?.name ?? "Гость"} (приложение)`,
           userId: user?.id ? String(user.id) : undefined,
         }),
       });
