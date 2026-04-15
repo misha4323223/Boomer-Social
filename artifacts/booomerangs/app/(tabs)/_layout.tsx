@@ -53,7 +53,7 @@ function ClassicTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: "#ffffff",
         tabBarInactiveTintColor: "#666666",
-        headerShown: true,
+        headerShown: false,
         headerStyle: { backgroundColor: "#000000" },
         headerTintColor: "#ffffff",
         headerShadowVisible: false,
@@ -95,6 +95,7 @@ function ClassicTabLayout() {
         name="cart"
         options={{
           title: "Корзина",
+          headerShown: true,
           tabBarBadge: totalCount > 0 ? totalCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: "#ffffff",
@@ -111,6 +112,7 @@ function ClassicTabLayout() {
         name="favorites"
         options={{
           title: "Избранное",
+          headerShown: true,
           tabBarIcon: ({ color }) => (
             <Feather name="heart" size={22} color={color} />
           ),
@@ -120,6 +122,7 @@ function ClassicTabLayout() {
         name="profile"
         options={{
           title: "Профиль",
+          headerShown: true,
           tabBarIcon: ({ color }) => (
             <Feather name="user" size={22} color={color} />
           ),

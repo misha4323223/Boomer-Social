@@ -148,7 +148,7 @@ export default function CatalogScreen() {
         style={[
           styles.header,
           {
-            paddingTop: insets.top + 4,
+            paddingTop: insets.top,
             backgroundColor: colors.background,
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
@@ -341,8 +341,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 6,
-    gap: 6,
+    paddingBottom: 4,
+    gap: 4,
   },
   titleRow: {
     alignItems: "center",
