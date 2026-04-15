@@ -23,7 +23,7 @@ export function ProductCard({ product }: Props) {
         styles.card,
         { backgroundColor: colors.card, opacity: pressed ? 0.85 : 1 },
       ]}
-      onPress={() => router.push(`/product/${product.slug ?? product.id}` as any)}
+      onPress={() => router.push(`/product/${product.id}` as any)}
     >
       <View style={styles.imageContainer}>
         <Image
