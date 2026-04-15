@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -10,7 +11,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
@@ -18,7 +18,7 @@ import { formatPrice } from "@/lib/types";
 
 export default function CartScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const { items, isLoading, updateQuantity, removeItem } = useCart();
 
   const total = items.reduce((sum, item) => {
@@ -55,13 +55,13 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: tabBarHeight }]}>
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: 16 },
+          { paddingBottom: 8 },
         ]}
         renderItem={({ item }) => (
           <View style={[styles.cartItem, { backgroundColor: colors.card }]}>
@@ -124,7 +124,7 @@ export default function CartScreen() {
           {
             backgroundColor: colors.background,
             borderTopColor: colors.border,
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+            paddingBottom: 16,
           },
         ]}
       >
