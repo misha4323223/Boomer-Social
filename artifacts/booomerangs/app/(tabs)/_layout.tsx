@@ -1,10 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
@@ -134,11 +135,57 @@ function ClassicTabLayout() {
   );
 }
 
-export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
-  return <ClassicTabLayout />;
+function ChatFab() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Pressable
+      onPress={() => router.push("/chat")}
+      style={({ pressed }) => [
+        styles.fab,
+        {
+          bottom: insets.bottom + 90,
+          opacity: pressed ? 0.8 : 1,
+        },
+      ]}
+    >
+      <Feather name="message-circle" size={24} color="#000000" />
+    </Pressable>
+  );
 }
 
-const styles = StyleSheet.create({});
+export default function TabLayout() {
+  if (isLiquidGlassAvailable()) {
+    return (
+      <View style={{ flex: 1 }}>
+        <NativeTabLayout />
+        <ChatFab />
+      </View>
+    );
+  }
+  return (
+    <View style={{ flex: 1 }}>
+      <ClassicTabLayout />
+      <ChatFab />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  fab: {
+    position: "absolute",
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+});
