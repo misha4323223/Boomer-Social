@@ -184,13 +184,6 @@ export default function CatalogScreen() {
           },
         ]}
       >
-        <View style={styles.titleRow}>
-          <Image
-            source={require("../../assets/boomerangs-logo.webp")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
         <View
           style={[
             styles.searchBar,
@@ -374,15 +367,6 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     gap: 4,
   },
-  titleRow: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  logo: {
-    width: 360,
-    height: 144,
-  },
   totalCount: {
     fontSize: 13,
   },
@@ -403,7 +387,7 @@ const styles = StyleSheet.create({
   },
   heroBtn: {
     position: "absolute",
-    bottom: 32,
+    bottom: 60,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
