@@ -147,7 +147,12 @@ export default function CatalogScreen() {
       <View
         style={[
           styles.header,
-          { paddingTop: insets.top + 12, backgroundColor: colors.background },
+          {
+            paddingTop: insets.top + 4,
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          },
         ]}
       >
         <View style={styles.titleRow}>
@@ -336,8 +341,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 12,
+    paddingBottom: 6,
+    gap: 6,
   },
   titleRow: {
     alignItems: "center",
