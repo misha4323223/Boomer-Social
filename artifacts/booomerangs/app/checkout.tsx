@@ -159,6 +159,7 @@ export default function CheckoutScreen() {
     setError(null);
     setSubmitting(true);
     try {
+      const fullName = `${lastName} ${firstName} ${middleName}`.trim();
       const body: Record<string, any> = {
         sessionId,
         paymentMethod,
@@ -169,17 +170,22 @@ export default function CheckoutScreen() {
         middleName,
         email,
         phone,
-        customerName: `${lastName} ${firstName} ${middleName}`.trim(),
+        customerName: fullName,
+        customerEmail: email,
+        customerPhone: phone,
         deliveryCost,
       };
       if (deliveryType === "pickup" && cdekPoint) {
         body.cdekCityCode = cdekPoint.cityCode;
         body.cdekPointCode = cdekPoint.code;
+        body.address = cdekPoint.address ?? cdekPoint.name ?? "";
       } else if (selectedCity) {
         body.cdekCityCode = selectedCity.code;
+        body.address = doorAddress || selectedCity.city;
       }
       if (deliveryType === "door" && doorAddress) {
         body.cdekDoorAddress = doorAddress;
+        body.address = doorAddress;
       }
       if (promoResult?.valid && promoCode) {
         body.promoCode = promoCode;
