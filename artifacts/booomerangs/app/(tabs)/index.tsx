@@ -152,7 +152,7 @@ export default function CatalogScreen() {
       >
         <View style={styles.titleRow}>
           <Image
-            source={require("../../assets/booomerangs-home-logo.webp")}
+            source={require("../../assets/boomerangs-logo.webp")}
             style={styles.logo}
             resizeMode="contain"
           />
