@@ -195,6 +195,9 @@ export default function CheckoutScreen() {
       console.log("[Checkout] order response:", JSON.stringify(res.data));
 
       const confirmationToken = res.data?.confirmationToken;
+      const orderId = res.data?.id;
+      const returnUrl = `https://booomerangs.ru/order-success/${orderId}`;
+
       const paymentUrl =
         res.data?.paymentUrl ??
         res.data?.confirmationUrl ??
@@ -205,7 +208,7 @@ export default function CheckoutScreen() {
         res.data?.payment?.confirmationUrl ??
         res.data?.payment?.paymentUrl ??
         (confirmationToken
-          ? `https://yookassa.ru/checkout/v3/mobile-embed/start?confirmation_token=${confirmationToken}`
+          ? `https://booomerangs.ru/pay.html?token=${encodeURIComponent(confirmationToken)}&return_url=${encodeURIComponent(returnUrl)}`
           : undefined);
 
       await refetchCart();

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Оплата</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: 2px; margin-bottom: 24px; }
+    #payment-form { width: 100%; max-width: 500px; }
+    .loading { text-align: center; color: #888; font-size: 14px; }
+    .error { text-align: center; color: #ff3b30; font-size: 14px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="logo">BOOOMERANGS</div>
+  <div id="payment-form">
+    <div class="loading" id="loading">Загрузка формы оплаты...</div>
+  </div>
+  <div class="error" id="error" style="display:none"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const returnUrl = params.get('return_url') || 'https://booomerangs.ru';
+
+    if (!token) {
+      document.getElementById('error').textContent = 'Токен оплаты не найден';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://yookassa.ru/checkout-widget/v1/checkout-widget.js';
+      script.onload = function () {
+        document.getElementById('loading').style.display = 'none';
+        const checkout = new window.YooMoneyCheckoutWidget({
+          confirmation_token: token,
+          return_url: returnUrl,
+          customization: {
+            colors: { controlPrimary: '#ffffff', background: { enabled: true, value: '#111111' } }
+          },
+          error_callback: function (error) {
+            console.error('YooKassa error:', error);
+            document.getElementById('error').textContent = 'Ошибка загрузки формы оплаты';
+            document.getElementById('error').style.display = 'block';
+          }
+        });
+        checkout.render('payment-form');
+      };
+      script.onerror = function () {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').textContent = 'Не удалось загрузить форму оплаты';
+        document.getElementById('error').style.display = 'block';
+      };
+      document.head.appendChild(script);
+    }
+  </script>
+</body>
+</html>
