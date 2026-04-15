@@ -52,10 +52,17 @@ export default function ProductScreen() {
       return;
     }
     setAdding(true);
+
+    let sizeToSend: string | undefined = selectedSize ?? undefined;
+    if (product.noSize && product.sizeStock) {
+      const firstSize = Object.keys(product.sizeStock)[0];
+      if (firstSize) sizeToSend = firstSize;
+    }
+
     try {
       await addToCart(
         product.id,
-        selectedSize ?? undefined,
+        sizeToSend,
         selectedColor ?? product.color ?? undefined
       );
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
