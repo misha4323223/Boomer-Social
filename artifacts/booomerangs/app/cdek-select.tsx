@@ -56,7 +56,7 @@ export default function CdekSelectScreen() {
     if (text.length < 2) { setCityResults([]); return; }
     setCitySearching(true);
     try {
-      const res = await api.get("/cdek/cities", { params: { city: text } });
+      const res = await api.get("/cdek/cities", { params: { city: text }, withCredentials: false });
       const list = Array.isArray(res.data) ? res.data : (res.data?.cities ?? []);
       setCityResults(list.slice(0, 10));
     } catch {
@@ -73,16 +73,18 @@ export default function CdekSelectScreen() {
     debounceRef.current = setTimeout(() => searchCities(text), 500);
   };
 
-  const { data: points, isLoading: pointsLoading } = useQuery<CdekPointRaw[]>({
+  const { data: points, isLoading: pointsLoading, error: pointsError } = useQuery<CdekPointRaw[]>({
     queryKey: ["cdek-points", selectedCity?.code],
     queryFn: async () => {
       const res = await api.get("/cdek/delivery-points", {
         params: { city_code: selectedCity!.code, type: "PVZ" },
+        withCredentials: false,
       });
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!selectedCity,
     staleTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const filtered = (points ?? []).filter((p) => {
@@ -191,6 +193,16 @@ export default function CdekSelectScreen() {
             <View style={styles.center}>
               <ActivityIndicator color={colors.foreground} size="large" />
               <Text style={[styles.hint, { color: colors.mutedForeground }]}>Загрузка пунктов выдачи...</Text>
+            </View>
+          ) : pointsError ? (
+            <View style={styles.center}>
+              <Feather name="alert-circle" size={32} color="#ef4444" />
+              <Text style={[styles.hint, { color: "#ef4444", textAlign: "center" }]}>
+                Ошибка загрузки пунктов выдачи
+              </Text>
+              <Text style={[styles.hint, { color: colors.mutedForeground, textAlign: "center", fontSize: 12 }]}>
+                {(pointsError as any)?.message ?? String(pointsError)}
+              </Text>
             </View>
           ) : (
             <FlatList

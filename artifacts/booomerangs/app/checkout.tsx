@@ -105,7 +105,7 @@ export default function CheckoutScreen() {
     if (text.length < 2) { setCityResults([]); return; }
     setCitySearching(true);
     try {
-      const res = await api.get("/cdek/cities", { params: { city: text } });
+      const res = await api.get("/cdek/cities", { params: { city: text }, withCredentials: false });
       const cities = Array.isArray(res.data) ? res.data : res.data?.cities ?? [];
       setCityResults(cities.slice(0, 8));
     } catch {
