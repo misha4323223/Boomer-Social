@@ -4,6 +4,7 @@ import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -150,7 +151,11 @@ export default function CatalogScreen() {
         ]}
       >
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.foreground }]}>BOOOMERANGS</Text>
+          <Image
+            source={require("../../assets/booomerangs-home-logo.webp")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           {total !== undefined && (
             <Text style={[styles.totalCount, { color: colors.mutedForeground }]}>
               {total} товаров
@@ -341,13 +346,12 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
+    alignItems: "center",
+    gap: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: 1,
+  logo: {
+    width: 160,
+    height: 48,
   },
   totalCount: {
     fontSize: 13,
