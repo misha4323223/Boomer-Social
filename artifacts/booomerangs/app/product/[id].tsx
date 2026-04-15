@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -28,6 +28,7 @@ export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { addToCart } = useCart();
   const { isFavorite, toggle } = useFavorites();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -40,7 +41,28 @@ export default function ProductScreen() {
     queryKey: ["product", id],
     queryFn: async () => {
       const res = await api.get(`/products/${id}`);
-      return res.data?.product ?? res.data;
+      const detail: Product = res.data?.product ?? res.data;
+
+      const cachedPages = queryClient.getQueriesData<{ products: Product[] }>({ queryKey: ["products"] });
+      let cached: Product | undefined;
+      for (const [, data] of cachedPages) {
+        const pages = (data as any)?.pages ?? [];
+        for (const page of pages) {
+          const found = (page?.products ?? []).find((p: Product) => String(p.id) === String(id));
+          if (found) { cached = found; break; }
+        }
+        if (cached) break;
+      }
+
+      if (cached) {
+        return {
+          ...detail,
+          noSize: detail.noSize ?? cached.noSize,
+          sizeStock: detail.sizeStock ?? cached.sizeStock,
+          sizes: detail.sizes ?? cached.sizes,
+        };
+      }
+      return detail;
     },
     enabled: !!id,
   });
@@ -54,10 +76,15 @@ export default function ProductScreen() {
     setAdding(true);
 
     let sizeToSend: string | undefined = selectedSize ?? undefined;
-    if (product.noSize && product.sizeStock) {
-      const firstSize = Object.keys(product.sizeStock)[0];
-      if (firstSize) sizeToSend = firstSize;
+    if (product.noSize) {
+      if (product.sizeStock && Object.keys(product.sizeStock).length > 0) {
+        sizeToSend = Object.keys(product.sizeStock)[0];
+      } else if (product.sizes && product.sizes.length > 0) {
+        sizeToSend = product.sizes[0];
+      }
     }
+
+    console.log("[Cart] noSize:", product.noSize, "sizeStock:", product.sizeStock, "sizes:", product.sizes, "sizeToSend:", sizeToSend);
 
     try {
       await addToCart(
@@ -68,7 +95,8 @@ export default function ProductScreen() {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
-    } catch {
+    } catch (err: any) {
+      console.error("[Cart] addToCart error:", err?.response?.data ?? err?.message ?? err);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setAdding(false);
