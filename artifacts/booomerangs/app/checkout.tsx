@@ -193,6 +193,8 @@ export default function CheckoutScreen() {
 
       const res = await api.post("/orders", body);
       console.log("[Checkout] order response:", JSON.stringify(res.data));
+
+      const confirmationToken = res.data?.confirmationToken;
       const paymentUrl =
         res.data?.paymentUrl ??
         res.data?.confirmationUrl ??
@@ -201,7 +203,10 @@ export default function CheckoutScreen() {
         res.data?.confirmation?.confirmationUrl ??
         res.data?.payment?.confirmation?.confirmation_url ??
         res.data?.payment?.confirmationUrl ??
-        res.data?.payment?.paymentUrl;
+        res.data?.payment?.paymentUrl ??
+        (confirmationToken
+          ? `https://yookassa.ru/checkout/v3/mobile-embed/start?confirmation_token=${confirmationToken}`
+          : undefined);
 
       await refetchCart();
 
