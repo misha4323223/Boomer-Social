@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import api from "@/lib/api";
+import api, { clearSessionCookie } from "@/lib/api";
 import { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -38,17 +38,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await api.post("/auth/login", { email, password });
-    await refetchUser();
+    const res = await api.post("/auth/login", { email, password });
+    const userData = res.data?.user ?? null;
+    if (userData) {
+      setUser(userData);
+    } else {
+      await refetchUser();
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    await api.post("/auth/register", { name, email, password });
-    await refetchUser();
+    const res = await api.post("/auth/register", { name, email, password });
+    const userData = res.data?.user ?? null;
+    if (userData) {
+      setUser(userData);
+    } else {
+      await refetchUser();
+    }
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
+    try {
+      await api.post("/auth/logout");
+    } catch {}
+    await clearSessionCookie();
     setUser(null);
   };
 

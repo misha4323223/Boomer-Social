@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +20,7 @@ import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
-import { Product, ProductVariant, formatPrice } from "@/lib/types";
+import { Product, formatPrice } from "@/lib/types";
 
 const { width } = Dimensions.get("window");
 
@@ -31,6 +32,7 @@ export default function ProductScreen() {
   const { isFavorite, toggle } = useFavorites();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState(0);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -43,20 +45,19 @@ export default function ProductScreen() {
     enabled: !!id,
   });
 
-  const { data: variants } = useQuery<ProductVariant[]>({
-    queryKey: ["variants", id],
-    queryFn: async () => {
-      const res = await api.get(`/products/${id}/variants`);
-      return res.data?.variants ?? res.data ?? [];
-    },
-    enabled: !!id,
-  });
-
   const handleAddToCart = async () => {
     if (!product) return;
+    const sizes = product.noSize ? [] : (product.sizes ?? []);
+    if (sizes.length > 0 && !selectedSize) {
+      return;
+    }
     setAdding(true);
     try {
-      await addToCart(product.id, selectedSize ?? undefined, selectedColor ?? product.color ?? undefined);
+      await addToCart(
+        product.id,
+        selectedSize ?? undefined,
+        selectedColor ?? product.color ?? undefined
+      );
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
@@ -81,7 +82,10 @@ export default function ProductScreen() {
         <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
           Товар не найден
         </Text>
-        <Pressable onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.border }]}>
+        <Pressable
+          onPress={() => router.back()}
+          style={[styles.backBtn, { borderColor: colors.border }]}
+        >
           <Text style={[styles.backBtnText, { color: colors.foreground }]}>Назад</Text>
         </Pressable>
       </View>
@@ -89,31 +93,81 @@ export default function ProductScreen() {
   }
 
   const fav = isFavorite(product.id);
-  const sizes = product.sizes ?? [];
-  const colors_list = variants?.map(v => v.color).filter(Boolean) ?? [];
-  if (product.color && !colors_list.includes(product.color)) {
-    colors_list.unshift(product.color);
-  }
+  const sizes = product.noSize ? [] : (product.sizes ?? []);
+  const allImages = product.images && product.images.length > 0
+    ? product.images
+    : [product.imageUrl].filter(Boolean);
+
+  const needSize = sizes.length > 0 && !selectedSize;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}>
-        <Image
-          source={{ uri: product.imageUrl }}
-          style={[styles.productImage, { width }]}
-          contentFit="cover"
-        />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
+        {allImages.length > 1 ? (
+          <View>
+            <FlatList
+              data={allImages}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, i) => String(i)}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+                setActiveImage(idx);
+              }}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={{ width, height: width * 1.1 }}
+                  contentFit="cover"
+                />
+              )}
+            />
+            <View style={styles.dots}>
+              {allImages.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: i === activeImage ? colors.foreground : colors.border,
+                      width: i === activeImage ? 18 : 6,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+        ) : (
+          <Image
+            source={{ uri: allImages[0] }}
+            style={[styles.productImage, { width }]}
+            contentFit="cover"
+          />
+        )}
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
-            <Pressable onPress={() => toggle(product)}>
+            <Pressable onPress={() => toggle(product)} hitSlop={8}>
               <Feather name="heart" size={22} color={fav ? "#ff3b30" : colors.mutedForeground} />
             </Pressable>
           </View>
-          <Text style={[styles.productPrice, { color: colors.foreground }]}>
-            {formatPrice(product.price)}
-          </Text>
+
+          <View style={styles.priceRow}>
+            <Text style={[styles.productPrice, { color: colors.foreground }]}>
+              {formatPrice(product.price)}
+            </Text>
+            {product.inStock === false ? (
+              <View style={[styles.badge, { backgroundColor: "#ff3b3020" }]}>
+                <Text style={[styles.badgeText, { color: "#ff3b30" }]}>Нет в наличии</Text>
+              </View>
+            ) : product.isNew ? (
+              <View style={[styles.badge, { backgroundColor: "#22c55e20" }]}>
+                <Text style={[styles.badgeText, { color: "#22c55e" }]}>Новинка</Text>
+              </View>
+            ) : null}
+          </View>
 
           {product.sku && (
             <Text style={[styles.sku, { color: colors.mutedForeground }]}>
@@ -123,57 +177,70 @@ export default function ProductScreen() {
 
           {sizes.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Размер</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Размер</Text>
+                {needSize && (
+                  <Text style={{ fontSize: 12, color: "#ff3b30" }}>Выберите размер</Text>
+                )}
+              </View>
               <View style={styles.optionRow}>
-                {sizes.map((size) => (
-                  <Pressable
-                    key={size}
-                    onPress={() => setSelectedSize(selectedSize === size ? null : size)}
-                    style={[
-                      styles.optionChip,
-                      {
-                        backgroundColor: selectedSize === size ? colors.foreground : colors.card,
-                        borderColor: selectedSize === size ? colors.foreground : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
+                {sizes.map((size) => {
+                  const inStock = product.sizeStock ? (product.sizeStock[size] ?? 0) > 0 : true;
+                  return (
+                    <Pressable
+                      key={size}
+                      onPress={() => inStock && setSelectedSize(selectedSize === size ? null : size)}
                       style={[
-                        styles.optionText,
-                        { color: selectedSize === size ? colors.background : colors.foreground },
+                        styles.optionChip,
+                        {
+                          backgroundColor: selectedSize === size ? colors.foreground : colors.card,
+                          borderColor: needSize && !selectedSize
+                            ? "#ff3b30"
+                            : selectedSize === size
+                              ? colors.foreground
+                              : colors.border,
+                          opacity: inStock ? 1 : 0.4,
+                        },
                       ]}
                     >
-                      {size}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Text
+                        style={[
+                          styles.optionText,
+                          { color: selectedSize === size ? colors.background : colors.foreground },
+                        ]}
+                      >
+                        {size}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
           )}
 
-          {colors_list.length > 0 && (
+          {product.colors && product.colors.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Цвет</Text>
               <View style={styles.optionRow}>
-                {colors_list.map((clr) => (
+                {product.colors.map((c, idx) => (
                   <Pressable
-                    key={clr}
-                    onPress={() => setSelectedColor(selectedColor === clr ? null : clr)}
+                    key={idx}
+                    onPress={() => setSelectedColor(selectedColor === c.color ? null : c.color)}
                     style={[
                       styles.optionChip,
                       {
-                        backgroundColor: selectedColor === clr ? colors.foreground : colors.card,
-                        borderColor: selectedColor === clr ? colors.foreground : colors.border,
+                        backgroundColor: selectedColor === c.color ? colors.foreground : colors.card,
+                        borderColor: selectedColor === c.color ? colors.foreground : colors.border,
                       },
                     ]}
                   >
                     <Text
                       style={[
                         styles.optionText,
-                        { color: selectedColor === clr ? colors.background : colors.foreground },
+                        { color: selectedColor === c.color ? colors.background : colors.foreground },
                       ]}
                     >
-                      {clr}
+                      {c.color}
                     </Text>
                   </Pressable>
                 ))}
@@ -186,6 +253,15 @@ export default function ProductScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Описание</Text>
               <Text style={[styles.description, { color: colors.mutedForeground }]}>
                 {product.description}
+              </Text>
+            </View>
+          )}
+
+          {product.composition && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Состав</Text>
+              <Text style={[styles.description, { color: colors.mutedForeground }]}>
+                {product.composition}
               </Text>
             </View>
           )}
@@ -206,18 +282,31 @@ export default function ProductScreen() {
           style={({ pressed }) => [
             styles.addBtn,
             {
-              backgroundColor: added ? "#22c55e" : colors.foreground,
+              backgroundColor: added ? "#22c55e" : needSize ? colors.card : colors.foreground,
               opacity: pressed || adding ? 0.8 : 1,
+              borderWidth: needSize ? 1 : 0,
+              borderColor: "#ff3b30",
             },
           ]}
           onPress={handleAddToCart}
-          disabled={adding}
+          disabled={adding || product.inStock === false}
         >
           {adding ? (
-            <ActivityIndicator color={colors.background} />
+            <ActivityIndicator color={needSize ? colors.foreground : colors.background} />
           ) : (
-            <Text style={[styles.addBtnText, { color: colors.background }]}>
-              {added ? "Добавлено!" : "В корзину"}
+            <Text
+              style={[
+                styles.addBtnText,
+                { color: added ? "#fff" : needSize ? "#ff3b30" : colors.background },
+              ]}
+            >
+              {product.inStock === false
+                ? "Нет в наличии"
+                : added
+                  ? "Добавлено!"
+                  : needSize
+                    ? "Выберите размер"
+                    : "В корзину"}
             </Text>
           )}
         </Pressable>
@@ -245,6 +334,17 @@ const styles = StyleSheet.create({
   productImage: {
     height: width * 1.1,
   },
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 10,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
   content: {
     padding: 20,
     gap: 12,
@@ -261,9 +361,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 28,
   },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   productPrice: {
     fontSize: 24,
     fontWeight: "800",
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   sku: {
     fontSize: 12,
@@ -271,6 +385,11 @@ const styles = StyleSheet.create({
   section: {
     gap: 10,
     marginTop: 4,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   sectionTitle: {
     fontSize: 14,

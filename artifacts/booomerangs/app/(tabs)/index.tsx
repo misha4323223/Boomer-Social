@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,33 +18,116 @@ import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
 import { Category, Product } from "@/lib/types";
 
+interface ProductsPage {
+  products: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+const PAGE_SIZE = 20;
+
+function parseCategoriesResponse(data: any): Category[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    return Object.entries(data).map(([key, val]: [string, any]) => ({
+      id: key,
+      name: val.name ?? key,
+      slug: val.slug ?? key,
+      subcategories: val.subcategories ?? [],
+    }));
+  }
+  return [];
+}
+
 export default function CatalogScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const { data: categoriesData } = useQuery<Category[]>({
+  const searchTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (text: string) => {
+    setSearch(text);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setDebouncedSearch(text);
+    }, 400);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+  };
+
+  const { data: categoriesRaw } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await api.get("/categories");
-      return res.data?.categories ?? res.data ?? [];
+      return parseCategoriesResponse(res.data?.categories ?? res.data);
     },
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: productsData, isLoading, isError, refetch } = useQuery<Product[]>({
-    queryKey: ["products", selectedCategory, search],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
+  const categories: Category[] = categoriesRaw ?? [];
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery<ProductsPage>({
+    queryKey: ["products", selectedCategory, debouncedSearch],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: Record<string, string | number> = {
+        page: pageParam as number,
+        limit: PAGE_SIZE,
+      };
       if (selectedCategory) params.category = selectedCategory;
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       const res = await api.get("/products", { params });
-      return res.data?.products ?? res.data ?? [];
+      const products: Product[] = res.data?.products ?? res.data ?? [];
+      const pagination = res.data?.pagination ?? {
+        page: pageParam as number,
+        limit: PAGE_SIZE,
+        total: products.length,
+        totalPages: 1,
+        hasMore: false,
+      };
+      return { products, pagination };
     },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined,
   });
 
-  const categories = categoriesData ?? [];
-  const products = productsData ?? [];
+  const products = data?.pages.flatMap((p) => p.products) ?? [];
+  const total = data?.pages[0]?.pagination.total;
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator color={colors.foreground} size="small" />
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -54,7 +137,14 @@ export default function CatalogScreen() {
           { paddingTop: insets.top + 12, backgroundColor: colors.background },
         ]}
       >
-        <Text style={[styles.title, { color: colors.foreground }]}>BOOOMERANGS</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: colors.foreground }]}>BOOOMERANGS</Text>
+          {total !== undefined && (
+            <Text style={[styles.totalCount, { color: colors.mutedForeground }]}>
+              {total} товаров
+            </Text>
+          )}
+        </View>
         <View
           style={[
             styles.searchBar,
@@ -67,11 +157,11 @@ export default function CatalogScreen() {
             placeholder="Поиск..."
             placeholderTextColor={colors.mutedForeground}
             value={search}
-            onChangeText={setSearch}
+            onChangeText={handleSearchChange}
             returnKeyType="search"
           />
           {search.length > 0 && (
-            <Pressable onPress={() => setSearch("")}>
+            <Pressable onPress={clearSearch}>
               <Feather name="x" size={16} color={colors.mutedForeground} />
             </Pressable>
           )}
@@ -102,7 +192,7 @@ export default function CatalogScreen() {
               </Text>
             </Pressable>
             {categories.map((cat) => {
-              const key = cat.slug ?? String(cat.id);
+              const key = (cat.slug ?? String(cat.id)) as string;
               const active = selectedCategory === key;
               return (
                 <Pressable
@@ -154,7 +244,7 @@ export default function CatalogScreen() {
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item, index) => `${item.id}_${index}`}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={[
@@ -166,6 +256,9 @@ export default function CatalogScreen() {
               <ProductCard product={item} />
             </View>
           )}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -182,10 +275,18 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 12,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
   title: {
     fontSize: 24,
     fontWeight: "800",
     letterSpacing: 1,
+  },
+  totalCount: {
+    fontSize: 13,
   },
   searchBar: {
     flexDirection: "row",
@@ -248,5 +349,9 @@ const styles = StyleSheet.create({
   retryText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
