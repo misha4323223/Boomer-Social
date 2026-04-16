@@ -4,6 +4,12 @@ import { Platform } from "react-native";
 
 const BASE_URL = "https://booomerangs.ru/api";
 const COOKIE_KEY = "bmg_session_cookie";
+export const TOKEN_KEY = "bmg_jwt_token";
+
+const PROXY_BASE =
+  process.env.EXPO_PUBLIC_DOMAIN
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`
+    : "http://localhost:8080/api";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -12,6 +18,61 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+export const proxyApi = axios.create({
+  baseURL: PROXY_BASE,
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export async function getStoredToken(): Promise<string | null> {
+  try {
+    if (Platform.OS !== "web") {
+      return await SecureStore.getItemAsync(TOKEN_KEY);
+    } else {
+      return typeof window !== "undefined"
+        ? window.localStorage?.getItem(TOKEN_KEY) ?? null
+        : null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+export async function storeToken(token: string): Promise<void> {
+  try {
+    if (Platform.OS !== "web") {
+      await SecureStore.setItemAsync(TOKEN_KEY, token);
+    } else {
+      if (typeof window !== "undefined") {
+        window.localStorage?.setItem(TOKEN_KEY, token);
+      }
+    }
+  } catch {}
+}
+
+export async function clearToken(): Promise<void> {
+  try {
+    if (Platform.OS !== "web") {
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+    } else {
+      if (typeof window !== "undefined") {
+        window.localStorage?.removeItem(TOKEN_KEY);
+      }
+    }
+  } catch {}
+}
+
+proxyApi.interceptors.request.use(async (config) => {
+  const token = await getStoredToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
 });
 
 if (Platform.OS !== "web") {

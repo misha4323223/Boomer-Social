@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import api, { clearSessionCookie } from "@/lib/api";
+import { proxyApi, clearSessionCookie, clearToken, storeToken } from "@/lib/api";
 import { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refetchUser = async () => {
     try {
-      const res = await api.get("/auth/me");
+      const res = await proxyApi.get("/proxy/me");
       setUser(res.data?.user ?? null);
     } catch {
       setUser(null);
@@ -40,8 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await api.post("/auth/login", { email, password });
+    const res = await proxyApi.post("/proxy/login", { email, password });
     const userData = res.data?.user ?? null;
+    const token: string | undefined = res.data?.token;
+    if (token) {
+      await storeToken(token);
+    }
     if (userData) {
       setUser(userData);
     } else {
@@ -50,8 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const res = await api.post("/auth/register", { name, email, password });
+    const res = await proxyApi.post("/proxy/register", { name, email, password });
     const userData = res.data?.user ?? null;
+    const token: string | undefined = res.data?.token;
+    if (token) {
+      await storeToken(token);
+    }
     if (userData) {
       setUser(userData);
     } else {
@@ -60,14 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const forgotPassword = async (email: string) => {
-    await api.post("/auth/forgot-password", { email });
+    await proxyApi.post("/proxy/forgot-password", { email });
   };
 
   const logout = async () => {
     try {
-      await api.post("/auth/logout");
+      await proxyApi.post("/proxy/logout");
     } catch {}
     await clearSessionCookie();
+    await clearToken();
     setUser(null);
   };
 

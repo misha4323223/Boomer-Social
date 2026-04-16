@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
-import api from "@/lib/api";
+import { proxyApi } from "@/lib/api";
 import { CdekData, Order, RawOrderItem, formatPrice } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -339,14 +339,14 @@ export default function OrdersScreen() {
   const { data: orders, isLoading, isError, refetch } = useQuery<Order[]>({
     queryKey: ["orders"],
     queryFn: async () => {
-      const res = await api.get("/auth/orders");
+      const res = await proxyApi.get("/proxy/orders");
       return res.data?.orders ?? [];
     },
     enabled: !!user,
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (orderId: number) => api.post(`/auth/orders/${orderId}/cancel`),
+    mutationFn: (orderId: number) => proxyApi.post(`/proxy/orders/${orderId}/cancel`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -369,7 +369,7 @@ export default function OrdersScreen() {
   const handleRefreshTracking = async (orderId: number) => {
     setRefreshingId(orderId);
     try {
-      await api.post(`/auth/orders/${orderId}/refresh-tracking`);
+      await proxyApi.post(`/proxy/orders/${orderId}/refresh-tracking`);
       await refetch();
     } catch (e: any) {
       Alert.alert("Трекинг", e?.response?.data?.error ?? "Не удалось обновить статус");
@@ -381,7 +381,7 @@ export default function OrdersScreen() {
   const handleRefreshYandex = async (orderId: number) => {
     setRefreshingId(orderId);
     try {
-      await api.post(`/auth/orders/${orderId}/refresh-yandex-tracking`);
+      await proxyApi.post(`/proxy/orders/${orderId}/refresh-yandex-tracking`);
       await refetch();
     } catch (e: any) {
       Alert.alert("Трекинг", e?.response?.data?.error ?? "Не удалось обновить статус");
