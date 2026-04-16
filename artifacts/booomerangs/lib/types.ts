@@ -79,6 +79,12 @@ export interface CdekData {
   lastCdekStatusName?: string;
   lastCdekStatusDate?: string;
   cdekStatuses?: CdekStatus[];
+  deliveryService?: string;
+  ydRequestId?: string;
+  ydTrackNumber?: string;
+  ydStatus?: string;
+  ydStatusName?: string;
+  ydStatuses?: CdekStatus[];
 }
 
 export interface RawOrderItem {
