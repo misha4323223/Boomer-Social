@@ -411,7 +411,7 @@ export default function CatalogScreen() {
           ]}
           renderItem={({ item }) => (
             <View style={styles.cardWrapper}>
-              <ProductCard product={item.primary} variants={item.variants} />
+              <ProductCard product={item.primary} />
             </View>
           )}
           onEndReached={handleEndReached}

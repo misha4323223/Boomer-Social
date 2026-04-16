@@ -55,7 +55,7 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function getBaseKey(product: Product): string {
+export function getBaseKey(product: Product): string {
   let name = product.name;
   if (product.color) {
     const re = new RegExp(`\\s*${escapeRegex(product.color)}\\s*`, "i");

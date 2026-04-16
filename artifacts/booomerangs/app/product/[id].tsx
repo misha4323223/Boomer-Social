@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -20,6 +20,7 @@ import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
+import { colorToHex, getBaseKey } from "@/lib/groupProducts";
 import { Product, formatPrice } from "@/lib/types";
 
 const { width } = Dimensions.get("window");
@@ -32,7 +33,6 @@ export default function ProductScreen() {
   const { addToCart } = useCart();
   const { isFavorite, toggle } = useFavorites();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
@@ -67,12 +67,31 @@ export default function ProductScreen() {
     enabled: !!id,
   });
 
+  // Ищем цветовые варианты из кэша каталога
+  const colorVariants = useMemo<Product[]>(() => {
+    if (!product) return [];
+    const baseKey = getBaseKey(product);
+    const all: Product[] = [];
+    const cachedPages = queryClient.getQueriesData<any>({ queryKey: ["products"] });
+    for (const [, data] of cachedPages) {
+      const pages = (data as any)?.pages ?? [];
+      for (const page of pages) {
+        for (const p of page?.products ?? []) {
+          if (getBaseKey(p) === baseKey && !all.find((x) => x.id === p.id)) {
+            all.push(p);
+          }
+        }
+      }
+    }
+    // Если несколько вариантов — показываем все
+    return all.length > 1 ? all : [];
+  }, [product, queryClient]);
+
   const handleAddToCart = async () => {
     if (!product) return;
     const sizes = product.noSize ? [] : (product.sizes ?? []);
-    if (sizes.length > 0 && !selectedSize) {
-      return;
-    }
+    if (sizes.length > 0 && !selectedSize) return;
+
     setAdding(true);
 
     let sizeToSend: string | undefined = selectedSize ?? undefined;
@@ -90,11 +109,7 @@ export default function ProductScreen() {
     console.log("[Cart] noSize:", product.noSize, "sizeStock:", product.sizeStock, "sizes:", product.sizes, "sizeToSend:", sizeToSend);
 
     try {
-      await addToCart(
-        product.id,
-        sizeToSend,
-        selectedColor ?? product.color ?? undefined
-      );
+      await addToCart(product.id, sizeToSend, product.color ?? undefined);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
@@ -141,6 +156,7 @@ export default function ProductScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
+        {/* Галерея изображений */}
         {allImages.length > 1 ? (
           <View>
             <FlatList
@@ -213,6 +229,44 @@ export default function ProductScreen() {
             </Text>
           )}
 
+          {/* Цветовые варианты */}
+          {colorVariants.length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Цвет</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.variantRow}>
+                {colorVariants.map((v) => {
+                  const isActive = String(v.id) === String(product.id);
+                  return (
+                    <Pressable
+                      key={v.id}
+                      onPress={() => {
+                        if (!isActive) router.replace(`/product/${v.id}` as any);
+                      }}
+                      style={[
+                        styles.variantThumb,
+                        {
+                          borderColor: isActive ? colors.foreground : colors.border,
+                          borderWidth: isActive ? 2 : 1,
+                        },
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: v.thumbnailUrl || v.imageUrl }}
+                        style={styles.variantImg}
+                        contentFit="cover"
+                        transition={150}
+                      />
+                      {v.color && (
+                        <View style={[styles.colorDot, { backgroundColor: colorToHex(v.color) }]} />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Размеры */}
           {sizes.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -252,36 +306,6 @@ export default function ProductScreen() {
                     </Pressable>
                   );
                 })}
-              </View>
-            </View>
-          )}
-
-          {product.colors && product.colors.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Цвет</Text>
-              <View style={styles.optionRow}>
-                {product.colors.map((c, idx) => (
-                  <Pressable
-                    key={idx}
-                    onPress={() => setSelectedColor(selectedColor === c.color ? null : c.color)}
-                    style={[
-                      styles.optionChip,
-                      {
-                        backgroundColor: selectedColor === c.color ? colors.foreground : colors.card,
-                        borderColor: selectedColor === c.color ? colors.foreground : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        { color: selectedColor === c.color ? colors.background : colors.foreground },
-                      ]}
-                    >
-                      {c.color}
-                    </Text>
-                  </Pressable>
-                ))}
               </View>
             </View>
           )}
@@ -434,6 +458,32 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  variantRow: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 4,
+  },
+  variantThumb: {
+    borderRadius: 10,
+    overflow: "hidden",
+    width: 72,
+    height: 96,
+    position: "relative",
+  },
+  variantImg: {
+    width: "100%",
+    height: "100%",
+  },
+  colorDot: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
   },
   optionRow: {
     flexDirection: "row",
