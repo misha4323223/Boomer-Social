@@ -555,13 +555,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingLeft: 6,
-    paddingRight: 6,
-    paddingVertical: 6,
+    paddingRight: 4,
+    paddingVertical: 3,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   navLogo: {
-    width: 200,
-    height: 70,
+    width: 150,
+    height: 36,
   },
   navIcons: {
     flexDirection: "row",
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   navIconBtn: {
-    padding: 7,
+    padding: 5,
     position: "relative",
   },
   badge: {
