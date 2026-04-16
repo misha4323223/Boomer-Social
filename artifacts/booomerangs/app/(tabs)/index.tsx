@@ -228,7 +228,7 @@ export default function CatalogScreen() {
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
             {/* Logo */}
-            <View style={styles.navLogoRow}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)")} style={styles.navLogoRow} activeOpacity={0.7}>
               <Svg width={58} height={32}>
                 <SvgText
                   stroke="#ffffff"
@@ -257,7 +257,7 @@ export default function CatalogScreen() {
                   BRAND
                 </SvgText>
               </Svg>
-            </View>
+            </TouchableOpacity>
 
             {/* Right icons */}
             <View style={styles.navIcons}>
