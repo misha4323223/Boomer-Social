@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -20,7 +20,7 @@ import { useCart } from "@/context/CartContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
-import { colorToHex, getBaseKey } from "@/lib/groupProducts";
+import { colorToHex } from "@/lib/groupProducts";
 import { Product, formatPrice } from "@/lib/types";
 
 const { width } = Dimensions.get("window");
@@ -67,25 +67,17 @@ export default function ProductScreen() {
     enabled: !!id,
   });
 
-  // Ищем цветовые варианты из кэша каталога
-  const colorVariants = useMemo<Product[]>(() => {
-    if (!product) return [];
-    const baseKey = getBaseKey(product);
-    const all: Product[] = [];
-    const cachedPages = queryClient.getQueriesData<any>({ queryKey: ["products"] });
-    for (const [, data] of cachedPages) {
-      const pages = (data as any)?.pages ?? [];
-      for (const page of pages) {
-        for (const p of page?.products ?? []) {
-          if (getBaseKey(p) === baseKey && !all.find((x) => x.id === p.id)) {
-            all.push(p);
-          }
-        }
-      }
-    }
-    // Если несколько вариантов — показываем все
-    return all.length > 1 ? all : [];
-  }, [product, queryClient]);
+  // Запрашиваем варианты товара напрямую с сервера
+  const { data: colorVariants = [] } = useQuery<Product[]>({
+    queryKey: ["product-variants", id],
+    queryFn: async () => {
+      const res = await api.get(`/products/${id}/variants`);
+      const list: Product[] = Array.isArray(res.data) ? res.data : [];
+      return list.length > 1 ? list : [];
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handleAddToCart = async () => {
     if (!product) return;
