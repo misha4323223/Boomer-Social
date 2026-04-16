@@ -3,7 +3,7 @@ import { BlurView } from "expo-blur";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import Svg, { Text as SvgText } from "react-native-svg";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -189,14 +189,16 @@ export default function CatalogScreen() {
     ? categories.find((c) => (c.slug ?? String(c.id)) === selectedCategory)?.name ?? null
     : null;
 
-  const heroHeight = Math.round(width * (1920 / 1080));
+  const heroHeight = useMemo(() => Math.round(width * (1920 / 1080)), [width]);
+  const heroSource = useMemo(() => ({ uri: HERO_IMAGE }), []);
 
-  const renderHero = () => (
+  const renderHero = useCallback(() => (
     <View style={[styles.hero, { width, height: heroHeight }]}>
       <Image
-        source={{ uri: HERO_IMAGE }}
+        source={heroSource}
         style={[styles.heroImage, { width, height: heroHeight }]}
         resizeMode="contain"
+        fadeDuration={0}
       />
       <View style={styles.heroOverlay} />
       <Pressable
@@ -210,7 +212,7 @@ export default function CatalogScreen() {
         </View>
       </Pressable>
     </View>
-  );
+  ), [width, heroHeight, heroSource, handleGoToCollection]);
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
