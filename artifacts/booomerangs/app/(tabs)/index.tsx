@@ -25,7 +25,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
-import { groupProducts } from "@/lib/groupProducts";
 import { Category, Product } from "@/lib/types";
 
 interface ProductsPage {
@@ -172,7 +171,6 @@ export default function CatalogScreen() {
   });
 
   const products = data?.pages.flatMap((p) => p.products) ?? [];
-  const productGroups = useMemo(() => groupProducts(products), [products]);
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
@@ -398,8 +396,8 @@ export default function CatalogScreen() {
       ) : (
         <FlatList
           ref={flatListRef}
-          data={productGroups}
-          keyExtractor={(item) => `group_${item.primary.id}`}
+          data={products}
+          keyExtractor={(item) => String(item.id)}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={[
@@ -411,7 +409,7 @@ export default function CatalogScreen() {
           ]}
           renderItem={({ item }) => (
             <View style={styles.cardWrapper}>
-              <ProductCard product={item.primary} />
+              <ProductCard product={item} />
             </View>
           )}
           onEndReached={handleEndReached}
