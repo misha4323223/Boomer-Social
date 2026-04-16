@@ -78,27 +78,36 @@ export default function ProfileScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
-  const [giftExpanded, setGiftExpanded] = useState(false);
-  const [promoExpanded, setPromoExpanded] = useState(false);
+  const [giftExpanded, setGiftExpanded] = useState(true);
+  const [promoExpanded, setPromoExpanded] = useState(true);
   const [priceDropExpanded, setPriceDropExpanded] = useState(false);
   const [stockExpanded, setStockExpanded] = useState(false);
 
   const userEmail = user?.email ?? "";
 
-  const { data: giftCards } = useQuery<any[]>({
-    queryKey: ["my-gift-cards"],
+  const { data: orders, isLoading: ordersLoading } = useQuery<any[]>({
+    queryKey: ["orders"],
     queryFn: async () => {
-      const res = await api.get("/auth/my-gift-cards");
-      return res.data ?? [];
+      const res = await api.get("/auth/orders");
+      return res.data?.orders ?? [];
     },
     enabled: !!user,
   });
 
-  const { data: promoCodes } = useQuery<any[]>({
+  const { data: giftCards, isLoading: giftLoading, isError: giftError } = useQuery<any[]>({
+    queryKey: ["my-gift-cards"],
+    queryFn: async () => {
+      const res = await api.get("/auth/my-gift-cards");
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: promoCodes, isLoading: promoLoading, isError: promoError } = useQuery<any[]>({
     queryKey: ["my-promo-codes"],
     queryFn: async () => {
       const res = await api.get("/auth/my-promo-codes");
-      return res.data ?? [];
+      return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!user,
   });
@@ -297,27 +306,41 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        {giftCards && giftCards.length > 0 && (
-          <View style={[styles.collapsibleCard, { backgroundColor: colors.card }]}>
-            <Pressable style={styles.collapsibleHeader} onPress={() => setGiftExpanded(!giftExpanded)}>
-              <Feather name="gift" size={16} color={colors.foreground} />
-              <Text style={[styles.collapsibleTitle, { color: colors.foreground }]}>
-                Подарочные карты
-              </Text>
+        {/* Сертификаты — всегда видны */}
+        <View style={[styles.collapsibleCard, { backgroundColor: colors.card }]}>
+          <Pressable style={styles.collapsibleHeader} onPress={() => setGiftExpanded(!giftExpanded)}>
+            <Feather name="gift" size={16} color={colors.foreground} />
+            <Text style={[styles.collapsibleTitle, { color: colors.foreground }]}>
+              Сертификаты
+            </Text>
+            {giftCards && giftCards.length > 0 && (
               <View style={[styles.countBadge, { backgroundColor: colors.border }]}>
                 <Text style={[styles.countBadgeText, { color: colors.foreground }]}>{giftCards.length}</Text>
               </View>
-              <Feather name={giftExpanded ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
-            </Pressable>
-            {giftExpanded && (
-              <View style={[styles.collapsibleContent, { borderTopColor: colors.border }]}>
-                {giftCards.map((card: any) => (
+            )}
+            <Feather name={giftExpanded ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
+          </Pressable>
+          {giftExpanded && (
+            <View style={[styles.collapsibleContent, { borderTopColor: colors.border }]}>
+              {giftLoading ? (
+                <ActivityIndicator color={colors.mutedForeground} style={{ marginVertical: 10 }} />
+              ) : giftError ? (
+                <Text style={[styles.emptySubText, { color: "#ef4444" }]}>Не удалось загрузить сертификаты</Text>
+              ) : !giftCards || giftCards.length === 0 ? (
+                <Text style={[styles.emptySubText, { color: colors.mutedForeground }]}>У вас нет подарочных сертификатов</Text>
+              ) : (
+                giftCards.map((card: any) => (
                   <View key={card.id} style={[styles.giftRow, { borderBottomColor: colors.border }]}>
                     <View style={styles.giftInfo}>
                       <Text style={[styles.giftCode, { color: colors.foreground }]}>{card.code}</Text>
                       <Text style={[styles.giftBalance, { color: colors.mutedForeground }]}>
                         Баланс: {formatPrice(card.balance ?? card.amount)}
                       </Text>
+                      {card.expiresAt && (
+                        <Text style={[styles.giftBalance, { color: colors.mutedForeground }]}>
+                          До: {new Date(card.expiresAt).toLocaleDateString("ru-RU")}
+                        </Text>
+                      )}
                     </View>
                     <Pressable
                       onPress={() => Alert.alert("Код скопирован", card.code)}
@@ -326,34 +349,42 @@ export default function ProfileScreen() {
                       <Feather name="copy" size={13} color={colors.mutedForeground} />
                     </Pressable>
                   </View>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
+                ))
+              )}
+            </View>
+          )}
+        </View>
 
-        {promoCodes && promoCodes.length > 0 && (
-          <View style={[styles.collapsibleCard, { backgroundColor: colors.card }]}>
-            <Pressable style={styles.collapsibleHeader} onPress={() => setPromoExpanded(!promoExpanded)}>
-              <Feather name="tag" size={16} color={colors.foreground} />
-              <Text style={[styles.collapsibleTitle, { color: colors.foreground }]}>Промокоды</Text>
+        {/* Промокоды — всегда видны */}
+        <View style={[styles.collapsibleCard, { backgroundColor: colors.card }]}>
+          <Pressable style={styles.collapsibleHeader} onPress={() => setPromoExpanded(!promoExpanded)}>
+            <Feather name="tag" size={16} color={colors.foreground} />
+            <Text style={[styles.collapsibleTitle, { color: colors.foreground }]}>Промокоды</Text>
+            {promoCodes && promoCodes.length > 0 && (
               <View style={[styles.countBadge, { backgroundColor: colors.border }]}>
                 <Text style={[styles.countBadgeText, { color: colors.foreground }]}>{promoCodes.length}</Text>
               </View>
-              <Feather name={promoExpanded ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
-            </Pressable>
-            {promoExpanded && (
-              <View style={[styles.collapsibleContent, { borderTopColor: colors.border }]}>
-                {promoCodes.map((promo: any, idx: number) => (
+            )}
+            <Feather name={promoExpanded ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
+          </Pressable>
+          {promoExpanded && (
+            <View style={[styles.collapsibleContent, { borderTopColor: colors.border }]}>
+              {promoLoading ? (
+                <ActivityIndicator color={colors.mutedForeground} style={{ marginVertical: 10 }} />
+              ) : promoError ? (
+                <Text style={[styles.emptySubText, { color: "#ef4444" }]}>Не удалось загрузить промокоды</Text>
+              ) : !promoCodes || promoCodes.length === 0 ? (
+                <Text style={[styles.emptySubText, { color: colors.mutedForeground }]}>У вас нет промокодов</Text>
+              ) : (
+                promoCodes.map((promo: any, idx: number) => (
                   <View key={idx} style={[styles.giftRow, { borderBottomColor: colors.border }]}>
                     <View style={styles.giftInfo}>
                       <Text style={[styles.giftCode, { color: colors.foreground }]}>{promo.code}</Text>
-                      {promo.discountPercent && (
+                      {promo.discountPercent ? (
                         <Text style={[styles.giftBalance, { color: "#10b981" }]}>Скидка {promo.discountPercent}%</Text>
-                      )}
-                      {promo.discountAmount && (
+                      ) : promo.discountAmount ? (
                         <Text style={[styles.giftBalance, { color: "#10b981" }]}>Скидка {formatPrice(promo.discountAmount)}</Text>
-                      )}
+                      ) : null}
                     </View>
                     <Pressable
                       onPress={() => Alert.alert("Промокод скопирован", promo.code)}
@@ -362,19 +393,81 @@ export default function ProfileScreen() {
                       <Feather name="copy" size={13} color={colors.mutedForeground} />
                     </Pressable>
                   </View>
-                ))}
+                ))
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Мои заказы — превью прямо в профиле */}
+        <View style={[styles.collapsibleCard, { backgroundColor: colors.card }]}>
+          <Pressable
+            style={styles.collapsibleHeader}
+            onPress={() => router.push("/orders" as any)}
+          >
+            <Feather name="package" size={16} color={colors.foreground} />
+            <Text style={[styles.collapsibleTitle, { color: colors.foreground }]}>Мои заказы</Text>
+            {orders && orders.length > 0 && (
+              <View style={[styles.countBadge, { backgroundColor: colors.border }]}>
+                <Text style={[styles.countBadgeText, { color: colors.foreground }]}>{orders.length}</Text>
               </View>
             )}
+            <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+          </Pressable>
+          <View style={[styles.collapsibleContent, { borderTopColor: colors.border }]}>
+            {ordersLoading ? (
+              <ActivityIndicator color={colors.mutedForeground} style={{ marginVertical: 10 }} />
+            ) : !orders || orders.length === 0 ? (
+              <Text style={[styles.emptySubText, { color: colors.mutedForeground }]}>Заказов пока нет</Text>
+            ) : (
+              orders.slice(0, 3).map((order: any) => (
+                <Pressable
+                  key={order.id}
+                  style={[styles.orderRow, { borderBottomColor: colors.border }]}
+                  onPress={() => router.push("/orders" as any)}
+                >
+                  <View style={styles.orderRowLeft}>
+                    <Text style={[styles.orderNum, { color: colors.foreground }]}>Заказ №{order.id}</Text>
+                    <Text style={[styles.orderDate, { color: colors.mutedForeground }]}>
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU") : ""}
+                    </Text>
+                  </View>
+                  <View style={styles.orderRowRight}>
+                    <Text style={[styles.orderStatus, { color: colors.mutedForeground }]}>
+                      {order.status === "pending" ? "Оформлен" :
+                       order.status === "paid" ? "Оплачен" :
+                       order.status === "processing" ? "Собирается" :
+                       order.status === "shipped" ? "Отправлен" :
+                       order.status === "delivered" ? "Доставлен" :
+                       order.status === "cancelled" ? "Отменён" : order.status}
+                    </Text>
+                    <Text style={[styles.orderTotal, { color: colors.foreground }]}>
+                      {order.totalAmount ? formatPrice(order.totalAmount) : ""}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
+            {orders && orders.length > 3 && (
+              <Pressable
+                style={[styles.viewAllBtn, { borderTopColor: colors.border }]}
+                onPress={() => router.push("/orders" as any)}
+              >
+                <Text style={[styles.viewAllText, { color: colors.mutedForeground }]}>
+                  Все заказы ({orders.length}) →
+                </Text>
+              </Pressable>
+            )}
           </View>
-        )}
+        </View>
 
         <View style={styles.menuSection}>
           <Pressable
             style={[styles.menuItem, { backgroundColor: colors.card }]}
-            onPress={() => router.push("/orders" as any)}
+            onPress={() => router.push("/(tabs)/favorites" as any)}
           >
-            <Feather name="package" size={20} color={colors.foreground} />
-            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Мои заказы</Text>
+            <Feather name="heart" size={20} color={colors.foreground} />
+            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Избранное</Text>
             <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
           </Pressable>
 
@@ -1271,5 +1364,45 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: "center",
     marginTop: 4,
+  },
+  orderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  orderRowLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  orderRowRight: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  orderNum: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  orderDate: {
+    fontSize: 12,
+  },
+  orderStatus: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  orderTotal: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  viewAllBtn: {
+    alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    marginTop: 4,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });
