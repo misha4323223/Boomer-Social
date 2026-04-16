@@ -227,11 +227,7 @@ export default function CatalogScreen() {
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
             {/* Logo */}
-            <Image
-              source={require("../../assets/boomerangs-logo.webp")}
-              style={styles.navLogo}
-              resizeMode="contain"
-            />
+            <Text style={styles.navLogoText}>BMGBRAND</Text>
 
             {/* Right icons */}
             <View style={styles.navIcons}>
@@ -559,9 +555,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  navLogo: {
-    width: 150,
-    height: 36,
+  navLogoText: {
+    fontFamily: "PermanentMarker_400Regular",
+    fontSize: 22,
+    color: "#ffffff",
+    letterSpacing: 1.5,
   },
   navIcons: {
     flexDirection: "row",

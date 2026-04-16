@@ -5,6 +5,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import { PermanentMarker_400Regular } from "@expo-google-fonts/permanent-marker";
 import {
   FontAwesome,
   Feather,
@@ -60,6 +61,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    PermanentMarker_400Regular,
     ...FontAwesome.font,
     ...Feather.font,
   });
