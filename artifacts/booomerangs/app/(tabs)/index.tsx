@@ -243,7 +243,20 @@ export default function CatalogScreen() {
                   BMG
                 </SvgText>
               </Svg>
-              <Text style={styles.navLogoBrand}>BRAND</Text>
+              <Svg width={82} height={32}>
+                <SvgText
+                  stroke="#000000"
+                  strokeWidth={1.2}
+                  fill="#ffffff"
+                  fontFamily="PermanentMarker_400Regular"
+                  fontSize={22}
+                  x={2}
+                  y={24}
+                  letterSpacing={1}
+                >
+                  BRAND
+                </SvgText>
+              </Svg>
             </View>
 
             {/* Right icons */}
@@ -576,12 +589,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-  },
-  navLogoBrand: {
-    fontFamily: "PermanentMarker_400Regular",
-    fontSize: 20,
-    color: "#ffffff",
-    letterSpacing: 1,
   },
   navIcons: {
     flexDirection: "row",
