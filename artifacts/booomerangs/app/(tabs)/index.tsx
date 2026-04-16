@@ -560,8 +560,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   navLogo: {
-    width: 130,
-    height: 48,
+    width: 200,
+    height: 70,
   },
   navIcons: {
     flexDirection: "row",
