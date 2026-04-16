@@ -34,7 +34,7 @@ pnpm workspace monorepo using TypeScript. Contains a mobile app (Expo) for BOOOM
 - `context/CartContext.tsx` — Cart state with sessionId logic (guest vs logged-in)
 - `context/FavoritesContext.tsx` — Favorites persisted via AsyncStorage
 - `lib/api.ts` — axios instance pointing to https://booomerangs.ru/api
-- `lib/types.ts` — TypeScript types + formatPrice helper
+- `lib/types.ts` — TypeScript types (Order, CdekData, RawOrderItem, User with loyalty fields) + formatPrice helper
 
 ## Key Commands
 

@@ -1,10 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,29 +16,278 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
-import { Order, formatPrice } from "@/lib/types";
+import { CdekData, Order, RawOrderItem, formatPrice } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "В обработке",
-  processing: "Обрабатывается",
+  pending: "Ожидает оплаты",
+  awaiting_payment: "Ожидает оплаты",
+  paid: "Оплачен",
+  processing: "В обработке",
   shipped: "Отправлен",
   delivered: "Доставлен",
   cancelled: "Отменён",
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  pending: "#f59e0b",
+  awaiting_payment: "#f59e0b",
+  paid: "#10b981",
+  processing: "#3b82f6",
+  shipped: "#8b5cf6",
+  delivered: "#10b981",
+  cancelled: "#ef4444",
+};
+
+const CANCELLABLE = ["pending", "paid", "processing"];
+
+function parseCdek(raw: CdekData | string | null | undefined): CdekData | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  return raw;
+}
+
+function parseItems(raw: RawOrderItem[] | string | undefined): RawOrderItem[] {
+  if (!raw) return [];
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+  return raw;
+}
+
+function getOrderTotal(order: Order): number {
+  return order.total ?? order.totalAmount ?? 0;
+}
+
+interface OrderCardProps {
+  order: Order;
+  onCancel: (id: number) => void;
+  onRefreshTracking: (id: number) => void;
+  refreshingId: number | null;
+}
+
+function OrderCard({ order, onCancel, onRefreshTracking, refreshingId }: OrderCardProps) {
+  const colors = useColors();
+  const [showItems, setShowItems] = useState(false);
+  const [showTracking, setShowTracking] = useState(false);
+
+  const cdek = parseCdek(order.cdekData);
+  const items = parseItems(order.items).filter((i) => !("_discountDetails" in i));
+  const statusColor = STATUS_COLORS[order.status] ?? "#999";
+  const canCancel = CANCELLABLE.includes(order.status);
+  const hasTracking = !!cdek?.orderUuid;
+  const isRefreshing = refreshingId === order.id;
+
+  return (
+    <View style={[styles.orderCard, { backgroundColor: colors.card }]}>
+      <View style={styles.orderHeader}>
+        <Text style={[styles.orderId, { color: colors.foreground }]}>
+          Заказ #{order.id}
+        </Text>
+        <View style={[styles.statusBadge, { backgroundColor: statusColor + "22" }]}>
+          <Text style={[styles.statusText, { color: statusColor }]}>
+            {STATUS_LABELS[order.status] ?? order.status}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={[styles.orderDate, { color: colors.mutedForeground }]}>
+        {new Date(order.createdAt).toLocaleDateString("ru-RU", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}
+      </Text>
+
+      <Text style={[styles.orderTotal, { color: colors.foreground }]}>
+        {formatPrice(getOrderTotal(order))}
+      </Text>
+
+      {order.address ? (
+        <Text style={[styles.orderAddress, { color: colors.mutedForeground }]} numberOfLines={2}>
+          <Feather name="map-pin" size={12} /> {order.address}
+        </Text>
+      ) : null}
+
+      {cdek?.cdekNumber ? (
+        <View style={styles.cdekRow}>
+          <Feather name="truck" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.cdekNumber, { color: colors.mutedForeground }]}>
+            СДЭК: {cdek.cdekNumber}
+          </Text>
+        </View>
+      ) : null}
+
+      {cdek?.lastCdekStatusName ? (
+        <Text style={[styles.cdekStatus, { color: "#8b5cf6" }]}>
+          {cdek.lastCdekStatusName}
+        </Text>
+      ) : null}
+
+      <View style={styles.actions}>
+        {items.length > 0 && (
+          <Pressable
+            style={[styles.actionBtn, { borderColor: colors.border }]}
+            onPress={() => setShowItems(!showItems)}
+          >
+            <Feather name="list" size={14} color={colors.mutedForeground} />
+            <Text style={[styles.actionText, { color: colors.mutedForeground }]}>
+              {showItems ? "Скрыть" : `Товары (${items.length})`}
+            </Text>
+          </Pressable>
+        )}
+
+        {hasTracking && (
+          <Pressable
+            style={[styles.actionBtn, { borderColor: colors.border }]}
+            onPress={() => {
+              setShowTracking(!showTracking);
+              if (!showTracking && !cdek?.cdekStatuses?.length) {
+                onRefreshTracking(order.id);
+              }
+            }}
+          >
+            <Feather name="map" size={14} color={colors.mutedForeground} />
+            <Text style={[styles.actionText, { color: colors.mutedForeground }]}>
+              {showTracking ? "Скрыть" : "Трекинг"}
+            </Text>
+          </Pressable>
+        )}
+
+        {hasTracking && (
+          <Pressable
+            style={[styles.actionBtn, { borderColor: colors.border }]}
+            onPress={() => onRefreshTracking(order.id)}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <ActivityIndicator size={14} color={colors.mutedForeground} />
+            ) : (
+              <Feather name="refresh-cw" size={14} color={colors.mutedForeground} />
+            )}
+            <Text style={[styles.actionText, { color: colors.mutedForeground }]}>
+              Обновить
+            </Text>
+          </Pressable>
+        )}
+
+        {canCancel && (
+          <Pressable
+            style={[styles.actionBtn, { borderColor: "#ef4444" }]}
+            onPress={() => onCancel(order.id)}
+          >
+            <Feather name="x" size={14} color="#ef4444" />
+            <Text style={[styles.actionText, { color: "#ef4444" }]}>
+              Отменить
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {showItems && items.length > 0 && (
+        <View style={[styles.itemsBlock, { borderTopColor: colors.border }]}>
+          {items.map((item, idx) => (
+            <View key={idx} style={styles.itemRow}>
+              <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
+                {item.name}
+                {item.size ? ` · ${item.size}` : ""}
+                {item.color ? ` · ${item.color}` : ""}
+              </Text>
+              <Text style={[styles.itemQty, { color: colors.mutedForeground }]}>
+                {item.quantity} × {formatPrice(item.price)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {showTracking && cdek && (
+        <View style={[styles.trackingBlock, { borderTopColor: colors.border }]}>
+          {cdek.cdekStatuses && cdek.cdekStatuses.length > 0 ? (
+            cdek.cdekStatuses.map((s, idx) => (
+              <View key={idx} style={styles.trackingRow}>
+                <View style={[styles.trackingDot, { backgroundColor: idx === 0 ? "#8b5cf6" : colors.border }]} />
+                <View style={styles.trackingInfo}>
+                  <Text style={[styles.trackingName, { color: colors.foreground }]}>{s.name}</Text>
+                  <Text style={[styles.trackingMeta, { color: colors.mutedForeground }]}>
+                    {new Date(s.date).toLocaleString("ru-RU", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {s.city ? ` · ${s.city}` : ""}
+                  </Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={[styles.trackingEmpty, { color: colors.mutedForeground }]}>
+              Нет данных о движении. Нажмите «Обновить».
+            </Text>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function OrdersScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [refreshingId, setRefreshingId] = useState<number | null>(null);
 
-  const { data: orders, isLoading, isError } = useQuery<Order[]>({
-    queryKey: ["orders", user?.id],
+  const { data: orders, isLoading, isError, refetch } = useQuery<Order[]>({
+    queryKey: ["orders"],
     queryFn: async () => {
-      const res = await api.get(`/orders/user/${user!.id}`);
-      return res.data?.orders ?? res.data ?? [];
+      const res = await api.get("/auth/orders");
+      return res.data?.orders ?? [];
     },
     enabled: !!user,
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: (orderId: number) => api.post(`/auth/orders/${orderId}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: any) => {
+      Alert.alert("Ошибка", e?.response?.data?.error ?? "Не удалось отменить заказ");
+    },
+  });
+
+  const handleCancel = (orderId: number) => {
+    Alert.alert(
+      "Отменить заказ",
+      `Вы уверены, что хотите отменить заказ #${orderId}?`,
+      [
+        { text: "Нет", style: "cancel" },
+        {
+          text: "Отменить заказ",
+          style: "destructive",
+          onPress: () => cancelMutation.mutate(orderId),
+        },
+      ]
+    );
+  };
+
+  const handleRefreshTracking = async (orderId: number) => {
+    setRefreshingId(orderId);
+    try {
+      await api.post(`/auth/orders/${orderId}/refresh-tracking`);
+      await refetch();
+    } catch (e: any) {
+      Alert.alert(
+        "Трекинг",
+        e?.response?.data?.error ?? "Не удалось обновить статус"
+      );
+    } finally {
+      setRefreshingId(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -63,9 +314,13 @@ export default function OrdersScreen() {
   if (isError) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Feather name="alert-circle" size={40} color={colors.mutedForeground} />
         <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
           Ошибка загрузки заказов
         </Text>
+        <Pressable onPress={() => refetch()} style={[styles.retryBtn, { borderColor: colors.border }]}>
+          <Text style={{ color: colors.foreground, fontSize: 14 }}>Повторить</Text>
+        </Pressable>
       </View>
     );
   }
@@ -89,35 +344,16 @@ export default function OrdersScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
         renderItem={({ item }) => (
-          <View style={[styles.orderCard, { backgroundColor: colors.card }]}>
-            <View style={styles.orderHeader}>
-              <Text style={[styles.orderId, { color: colors.foreground }]}>
-                Заказ #{item.id}
-              </Text>
-              <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[styles.statusText, { color: colors.foreground }]}>
-                  {STATUS_LABELS[item.status] ?? item.status}
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.orderDate, { color: colors.mutedForeground }]}>
-              {new Date(item.createdAt).toLocaleDateString("ru-RU", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </Text>
-            <Text style={[styles.orderTotal, { color: colors.foreground }]}>
-              Итого: {formatPrice(item.totalAmount)}
-            </Text>
-            {item.address && (
-              <Text style={[styles.orderAddress, { color: colors.mutedForeground }]}>
-                {item.address}
-              </Text>
-            )}
-          </View>
+          <OrderCard
+            order={item}
+            onCancel={handleCancel}
+            onRefreshTracking={handleRefreshTracking}
+            refreshingId={refreshingId}
+          />
         )}
         showsVerticalScrollIndicator={false}
+        onRefresh={refetch}
+        refreshing={isLoading}
       />
     </View>
   );
@@ -141,12 +377,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+  },
   list: {
     padding: 16,
     gap: 12,
   },
   orderCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     gap: 6,
   },
@@ -166,17 +409,99 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   orderDate: {
     fontSize: 13,
   },
   orderTotal: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginTop: 4,
+    fontSize: 17,
+    fontWeight: "700",
+    marginTop: 2,
   },
   orderAddress: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  cdekRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  cdekNumber: {
+    fontSize: 12,
+  },
+  cdekStatus: {
     fontSize: 13,
+    fontWeight: "600",
+  },
+  actions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  itemsBlock: {
+    borderTopWidth: 1,
+    marginTop: 8,
+    paddingTop: 10,
+    gap: 8,
+  },
+  itemRow: {
+    gap: 2,
+  },
+  itemName: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  itemQty: {
+    fontSize: 12,
+  },
+  trackingBlock: {
+    borderTopWidth: 1,
+    marginTop: 8,
+    paddingTop: 10,
+    gap: 10,
+  },
+  trackingRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  trackingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 3,
+  },
+  trackingInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  trackingName: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  trackingMeta: {
+    fontSize: 12,
+  },
+  trackingEmpty: {
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 8,
   },
 });

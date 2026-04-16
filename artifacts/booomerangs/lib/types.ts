@@ -59,20 +59,52 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  emailVerified?: boolean;
+  role?: string;
+  loyaltyDiscount?: number;
+  totalSpent?: number;
+}
+
+export interface CdekStatus {
+  code: string;
+  name: string;
+  date: string;
+  city?: string;
+}
+
+export interface CdekData {
+  cdekNumber?: string;
+  orderUuid?: string;
+  lastCdekStatus?: string;
+  lastCdekStatusName?: string;
+  lastCdekStatusDate?: string;
+  cdekStatuses?: CdekStatus[];
+}
+
+export interface RawOrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  sku?: string;
+  size?: string;
+  color?: string;
 }
 
 export interface Order {
   id: number;
   userId?: number;
   status: string;
-  totalAmount: number;
+  total: number;
+  totalAmount?: number;
   createdAt: string;
-  items?: OrderItem[];
+  items?: RawOrderItem[] | string;
   customerName?: string;
-  phone?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   address?: string;
   deliveryMethod?: string;
   trackingNumber?: string;
+  cdekData?: CdekData | string | null;
 }
 
 export interface OrderItem {
