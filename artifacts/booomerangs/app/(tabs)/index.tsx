@@ -186,12 +186,14 @@ export default function CatalogScreen() {
     ? categories.find((c) => (c.slug ?? String(c.id)) === selectedCategory)?.name ?? null
     : null;
 
+  const heroHeight = Math.round(width * (1920 / 1080));
+
   const renderHero = () => (
-    <View style={[styles.hero, { width }]}>
+    <View style={[styles.hero, { width, height: heroHeight }]}>
       <Image
         source={{ uri: HERO_IMAGE }}
-        style={[styles.heroImage, { width }]}
-        resizeMode="cover"
+        style={[styles.heroImage, { width, height: heroHeight }]}
+        resizeMode="contain"
       />
       <View style={styles.heroOverlay} />
       <Pressable
@@ -616,11 +618,9 @@ const styles = StyleSheet.create({
   /* Hero */
   hero: {
     position: "relative",
-    height: 500,
     marginBottom: 8,
   },
   heroImage: {
-    height: 500,
     position: "absolute",
     top: 0,
     left: 0,
