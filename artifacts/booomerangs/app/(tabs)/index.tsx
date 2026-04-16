@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import Svg, { Text as SvgText } from "react-native-svg";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -228,9 +229,20 @@ export default function CatalogScreen() {
           <View style={styles.navbarInner}>
             {/* Logo */}
             <View style={styles.navLogoRow}>
-              <View style={styles.navLogoBmgBox}>
-                <Text style={styles.navLogoBmg}>BMG</Text>
-              </View>
+              <Svg width={58} height={32}>
+                <SvgText
+                  stroke="#ffffff"
+                  strokeWidth={1.2}
+                  fill="transparent"
+                  fontFamily="PermanentMarker_400Regular"
+                  fontSize={22}
+                  x={2}
+                  y={24}
+                  letterSpacing={1}
+                >
+                  BMG
+                </SvgText>
+              </Svg>
               <Text style={styles.navLogoBrand}>BRAND</Text>
             </View>
 
@@ -564,18 +576,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-  },
-  navLogoBmgBox: {
-    backgroundColor: "#ffffff",
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  navLogoBmg: {
-    fontFamily: "PermanentMarker_400Regular",
-    fontSize: 20,
-    color: "#000000",
-    letterSpacing: 1,
   },
   navLogoBrand: {
     fontFamily: "PermanentMarker_400Regular",
