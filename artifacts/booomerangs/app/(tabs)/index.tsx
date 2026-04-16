@@ -227,7 +227,12 @@ export default function CatalogScreen() {
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
             {/* Logo */}
-            <Text style={styles.navLogoText}>BMGBRAND</Text>
+            <View style={styles.navLogoRow}>
+              <View style={styles.navLogoBmgBox}>
+                <Text style={styles.navLogoBmg}>BMG</Text>
+              </View>
+              <Text style={styles.navLogoBrand}>BRAND</Text>
+            </View>
 
             {/* Right icons */}
             <View style={styles.navIcons}>
@@ -555,11 +560,28 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  navLogoText: {
+  navLogoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  navLogoBmgBox: {
+    backgroundColor: "#ffffff",
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  navLogoBmg: {
     fontFamily: "PermanentMarker_400Regular",
-    fontSize: 22,
+    fontSize: 20,
+    color: "#000000",
+    letterSpacing: 1,
+  },
+  navLogoBrand: {
+    fontFamily: "PermanentMarker_400Regular",
+    fontSize: 20,
     color: "#ffffff",
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   navIcons: {
     flexDirection: "row",
