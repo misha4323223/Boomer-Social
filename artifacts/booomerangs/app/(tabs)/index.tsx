@@ -215,18 +215,9 @@ export default function CatalogScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ── TOP NAVBAR ── */}
-      <View
-        style={[
-          styles.navbar,
-          {
-            paddingTop: insets.top + 6,
-            backgroundColor: colors.background,
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
-        <View style={styles.navInner}>
+      {/* ── TOP NAVBAR (pill, like site) ── */}
+      <View style={[styles.navbarWrap, { paddingTop: insets.top + 8 }]}>
+        <View style={[styles.navbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Logo */}
           <Image
             source={require("../../assets/boomerangs-logo.webp")}
@@ -242,7 +233,7 @@ export default function CatalogScreen() {
             >
               <Feather
                 name={searchVisible ? "x" : "search"}
-                size={22}
+                size={21}
                 color={colors.foreground}
               />
             </TouchableOpacity>
@@ -251,14 +242,14 @@ export default function CatalogScreen() {
               onPress={() => router.push("/(tabs)/favorites")}
               style={styles.navIconBtn}
             >
-              <Feather name="heart" size={22} color={colors.foreground} />
+              <Feather name="heart" size={21} color={colors.foreground} />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/cart")}
               style={styles.navIconBtn}
             >
-              <Feather name="shopping-bag" size={22} color={colors.foreground} />
+              <Feather name="shopping-bag" size={21} color={colors.foreground} />
               {totalCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
@@ -272,11 +263,11 @@ export default function CatalogScreen() {
               onPress={() => router.push("/(tabs)/profile")}
               style={styles.navIconBtn}
             >
-              <Feather name="user" size={22} color={colors.foreground} />
+              <Feather name="user" size={21} color={colors.foreground} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
-              <Feather name="menu" size={24} color={colors.foreground} />
+              <Feather name="menu" size={22} color={colors.foreground} />
             </TouchableOpacity>
           </View>
         </View>
@@ -536,25 +527,34 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 
   /* Navbar */
-  navbar: {
-    paddingHorizontal: 16,
+  navbarWrap: {
+    paddingHorizontal: 12,
     paddingBottom: 10,
-    borderBottomWidth: 1,
     gap: 8,
   },
-  navInner: {
+  navbar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderRadius: 40,
+    borderWidth: 1,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   navLogo: {
-    width: 120,
-    height: 44,
+    width: 100,
+    height: 38,
   },
   navIcons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 0,
   },
   navIconBtn: {
     padding: 7,
@@ -562,8 +562,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 3,
-    right: 3,
+    top: 2,
+    right: 2,
     backgroundColor: "#ffffff",
     borderRadius: 8,
     minWidth: 16,
@@ -581,10 +581,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
+    marginHorizontal: 0,
   },
   searchInput: {
     flex: 1,
@@ -593,6 +594,7 @@ const styles = StyleSheet.create({
   },
   activePillRow: {
     flexDirection: "row",
+    paddingHorizontal: 4,
   },
   activePill: {
     flexDirection: "row",
