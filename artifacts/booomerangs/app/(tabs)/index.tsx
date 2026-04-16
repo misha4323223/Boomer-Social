@@ -216,7 +216,7 @@ export default function CatalogScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── TOP NAVBAR (pill, like site) ── */}
-      <View style={[styles.navbarWrap, { paddingTop: insets.top + 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }]}>
+      <View style={[styles.navbarWrap, { top: insets.top + 4, position: 'absolute', left: 0, right: 0, zIndex: 10 }]}>
         <View style={[styles.navbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Logo */}
           <Image
