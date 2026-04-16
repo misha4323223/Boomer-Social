@@ -386,7 +386,7 @@ export default function CatalogScreen() {
             </Text>
           </Pressable>
         </View>
-      ) : productGroups.length === 0 ? (
+      ) : products.length === 0 ? (
         <View style={styles.center}>
           <Feather name="package" size={48} color={colors.mutedForeground} />
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
