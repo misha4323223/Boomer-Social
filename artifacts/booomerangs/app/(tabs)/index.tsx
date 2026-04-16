@@ -73,6 +73,7 @@ export default function CatalogScreen() {
 
   const drawerAnim = useRef(new Animated.Value(width)).current;
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flatListRef = useRef<any>(null);
 
   const openDrawer = () => {
     setDrawerOpen(true);
@@ -228,7 +229,18 @@ export default function CatalogScreen() {
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
             {/* Logo */}
-            <TouchableOpacity onPress={() => router.push("/(tabs)")} style={styles.navLogoRow} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedCategory(null);
+                setSelectedSubcategory(null);
+                setSearch("");
+                setDebouncedSearch("");
+                setSearchVisible(false);
+                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+              }}
+              style={styles.navLogoRow}
+              activeOpacity={0.7}
+            >
               <Svg width={58} height={32}>
                 <SvgText
                   stroke="#ffffff"
@@ -381,6 +393,7 @@ export default function CatalogScreen() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={products}
           keyExtractor={(item, index) => `${item.id}_${index}`}
           numColumns={2}
