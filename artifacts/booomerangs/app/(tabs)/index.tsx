@@ -216,7 +216,7 @@ export default function CatalogScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── TOP NAVBAR (pill, like site) ── */}
-      <View style={[styles.navbarWrap, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.navbarWrap, { paddingTop: insets.top + 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }]}>
         <View style={[styles.navbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Logo */}
           <Image
@@ -352,7 +352,10 @@ export default function CatalogScreen() {
           columnWrapperStyle={styles.row}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: insets.bottom + 90 },
+            {
+              paddingBottom: insets.bottom + 90,
+              paddingTop: (!selectedCategory && !selectedSubcategory && !debouncedSearch) ? 0 : insets.top + 70,
+            },
           ]}
           renderItem={({ item }) => (
             <View style={styles.cardWrapper}>
