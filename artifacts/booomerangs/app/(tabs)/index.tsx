@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
@@ -197,11 +198,14 @@ export default function CatalogScreen() {
       />
       <View style={styles.heroOverlay} />
       <Pressable
-        style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.85 }]}
+        style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
         onPress={handleGoToCollection}
       >
-        <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
-        <Feather name="arrow-right" size={16} color="#000000" />
+        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={styles.heroBtnContent}>
+          <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
+          <Feather name="arrow-right" size={13} color="#ffffff" />
+        </View>
       </Pressable>
     </View>
   );
@@ -219,58 +223,61 @@ export default function CatalogScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── TOP NAVBAR (pill, like site) ── */}
       <View style={[styles.navbarWrap, { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingTop: 8 }]}>
-        <View style={[styles.navbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {/* Logo */}
-          <Image
-            source={require("../../assets/boomerangs-logo.webp")}
-            style={styles.navLogo}
-            resizeMode="contain"
-          />
+        <View style={styles.navbarOuter}>
+          <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.navbarInner}>
+            {/* Logo */}
+            <Image
+              source={require("../../assets/boomerangs-logo.webp")}
+              style={styles.navLogo}
+              resizeMode="contain"
+            />
 
-          {/* Right icons */}
-          <View style={styles.navIcons}>
-            <TouchableOpacity
-              onPress={() => setSearchVisible((v) => !v)}
-              style={styles.navIconBtn}
-            >
-              <Feather
-                name={searchVisible ? "x" : "search"}
-                size={21}
-                color={colors.foreground}
-              />
-            </TouchableOpacity>
+            {/* Right icons */}
+            <View style={styles.navIcons}>
+              <TouchableOpacity
+                onPress={() => setSearchVisible((v) => !v)}
+                style={styles.navIconBtn}
+              >
+                <Feather
+                  name={searchVisible ? "x" : "search"}
+                  size={21}
+                  color="#ffffff"
+                />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/favorites")}
-              style={styles.navIconBtn}
-            >
-              <Feather name="heart" size={21} color={colors.foreground} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/favorites")}
+                style={styles.navIconBtn}
+              >
+                <Feather name="heart" size={21} color="#ffffff" />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/cart")}
-              style={styles.navIconBtn}
-            >
-              <Feather name="shopping-bag" size={21} color={colors.foreground} />
-              {totalCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {totalCount > 9 ? "9+" : totalCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/cart")}
+                style={styles.navIconBtn}
+              >
+                <Feather name="shopping-bag" size={21} color="#ffffff" />
+                {totalCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {totalCount > 9 ? "9+" : totalCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/profile")}
-              style={styles.navIconBtn}
-            >
-              <Feather name="user" size={21} color={colors.foreground} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/profile")}
+                style={styles.navIconBtn}
+              >
+                <Feather name="user" size={21} color="#ffffff" />
+              </TouchableOpacity>
 
-            <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
-              <Feather name="menu" size={22} color={colors.foreground} />
-            </TouchableOpacity>
+              <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
+                <Feather name="menu" size={22} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -537,20 +544,20 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     gap: 8,
   },
-  navbar: {
+  navbarOuter: {
+    borderRadius: 40,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  navbarInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 40,
-    borderWidth: 1,
     paddingLeft: 16,
     paddingRight: 6,
     paddingVertical: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   navLogo: {
     width: 100,
@@ -631,21 +638,26 @@ const styles = StyleSheet.create({
   },
   heroBtn: {
     position: "absolute",
-    bottom: 60,
+    bottom: 180,
     alignSelf: "center",
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  heroBtnContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 24,
-    paddingVertical: 13,
-    borderRadius: 32,
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   heroBtnText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#000000",
-    letterSpacing: 0.3,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ffffff",
+    letterSpacing: 0.4,
   },
 
   /* List */
