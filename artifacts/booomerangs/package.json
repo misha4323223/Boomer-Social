@@ -61,6 +61,7 @@
     "@react-navigation/bottom-tabs": "^7.15.9",
     "axios": "^1.15.0",
     "expo-clipboard": "~8.0.8",
-    "expo-secure-store": "^15.0.8"
+    "expo-secure-store": "^15.0.8",
+    "expo-video": "~3.0.16"
   }
 }

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
   Image,
   Modal,
   Pressable,
@@ -23,6 +24,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AboutVideo } from "@/components/AboutVideo";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
@@ -31,11 +33,6 @@ import { Category, Product } from "@/lib/types";
 
 const HERO_IMAGE =
   "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
-
-const ABOUT_VIDEO_URL =
-  "https://storage.yandexcloud.net/bmg/media/identity/cinematic_dark_urban_streetwear_video.mp4";
-
-const ABOUT_IMAGE = "https://booomerangs.ru/images/about-hero.webp";
 
 const ARTISTS = [
   {
@@ -95,6 +92,7 @@ function parseCategoriesResponse(data: any): Category[] {
   return [];
 }
 
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -102,13 +100,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const { totalCount } = useCart();
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchVisible, setSearchVisible] = useState(false);
+  const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
@@ -118,31 +113,19 @@ export default function HomeScreen() {
 
   const openDrawer = () => {
     setDrawerOpen(true);
-    Animated.timing(drawerAnim, {
-      toValue: 0,
-      duration: 280,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(drawerAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start();
   };
 
   const closeDrawer = () => {
-    Animated.timing(drawerAnim, {
-      toValue: width,
-      duration: 240,
-      useNativeDriver: true,
-    }).start(() => setDrawerOpen(false));
+    Animated.timing(drawerAnim, { toValue: width, duration: 240, useNativeDriver: true }).start(
+      () => setDrawerOpen(false)
+    );
   };
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => setDebouncedSearch(text), 400);
-  };
-
-  const clearSearch = () => {
-    setSearch("");
-    setDebouncedSearch("");
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {}, 400);
   };
 
   const { data: categoriesRaw } = useQuery({
@@ -155,33 +138,17 @@ export default function HomeScreen() {
   });
 
   const { data: newArrivals, isLoading: newArrivalsLoading } = useQuery<Product[]>({
-    queryKey: ["new-arrivals"],
+    queryKey: ["new-arrivals-home"],
     queryFn: async () => {
       const res = await api.get("/products", { params: { isNew: true, limit: 16 } });
-      return (res.data?.products ?? []).filter((p: Product) => p.isNew).slice(0, 16);
+      const products: Product[] = res.data?.products ?? res.data ?? [];
+      return products.slice(0, 16);
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const categories: Category[] = categoriesRaw ?? [];
-
-  const handleDrawerCategoryPress = (key: string) => {
-    setExpandedCat(expandedCat === key ? null : key);
-  };
-
-  const handleDrawerSubPress = (subName: string, catKey: string) => {
-    setSelectedCategory(catKey);
-    setSelectedSubcategory(subName);
-    closeDrawer();
-    router.push("/(tabs)/catalog" as any);
-  };
-
-  const handleDrawerAllPress = () => {
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
-    closeDrawer();
-    router.push("/(tabs)/catalog" as any);
-  };
+  const cardWidth = Math.floor((width - 12 * 3) / 2);
 
   const handleSubscribe = async () => {
     if (!email.trim()) return;
@@ -203,17 +170,20 @@ export default function HomeScreen() {
   };
 
   const heroHeight = Math.round(width * (1920 / 1080));
-  const cardWidth = (width - 12 * 3) / 2;
+
+  const renderNewArrivalCard = useCallback(
+    ({ item }: { item: Product }) => (
+      <View style={{ width: cardWidth, marginBottom: 12 }}>
+        <ProductCard product={item} />
+      </View>
+    ),
+    [cardWidth]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ── TOP NAVBAR ── */}
-      <View
-        style={[
-          styles.navbarWrap,
-          { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingTop: 8 },
-        ]}
-      >
+      {/* ── NAVBAR ── */}
+      <View style={[styles.navbarWrap, { paddingTop: 8 }]}>
         <View style={styles.navbarOuter}>
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
@@ -249,39 +219,21 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <View style={styles.navIcons}>
-              <TouchableOpacity
-                onPress={() => setSearchVisible((v) => !v)}
-                style={styles.navIconBtn}
-              >
-                <Feather
-                  name={searchVisible ? "x" : "search"}
-                  size={21}
-                  color="#ffffff"
-                />
+              <TouchableOpacity onPress={() => setSearchVisible((v) => !v)} style={styles.navIconBtn}>
+                <Feather name={searchVisible ? "x" : "search"} size={21} color="#ffffff" />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/favorites")}
-                style={styles.navIconBtn}
-              >
+              <TouchableOpacity onPress={() => router.push("/(tabs)/favorites")} style={styles.navIconBtn}>
                 <Feather name="heart" size={21} color="#ffffff" />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/cart")}
-                style={styles.navIconBtn}
-              >
+              <TouchableOpacity onPress={() => router.push("/(tabs)/cart")} style={styles.navIconBtn}>
                 <Feather name="shopping-bag" size={21} color="#ffffff" />
                 {totalCount > 0 && (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>
-                      {totalCount > 9 ? "9+" : totalCount}
-                    </Text>
+                    <Text style={styles.badgeText}>{totalCount > 9 ? "9+" : totalCount}</Text>
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/profile")}
-                style={styles.navIconBtn}
-              >
+              <TouchableOpacity onPress={() => router.push("/(tabs)/profile")} style={styles.navIconBtn}>
                 <Feather name="user" size={21} color="#ffffff" />
               </TouchableOpacity>
               <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
@@ -292,12 +244,7 @@ export default function HomeScreen() {
         </View>
 
         {searchVisible && (
-          <View
-            style={[
-              styles.searchBar,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Feather name="search" size={15} color={colors.mutedForeground} />
             <TextInput
               autoFocus
@@ -309,7 +256,7 @@ export default function HomeScreen() {
               returnKeyType="search"
             />
             {search.length > 0 && (
-              <Pressable onPress={clearSearch}>
+              <Pressable onPress={() => setSearch("")}>
                 <Feather name="x" size={15} color={colors.mutedForeground} />
               </Pressable>
             )}
@@ -323,14 +270,16 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
       >
         {/* HERO */}
-        <View style={[styles.hero, { width, height: heroHeight }]}>
+        <View style={{ width, height: heroHeight, position: "relative" }}>
           <Image
             source={{ uri: HERO_IMAGE }}
-            style={[styles.heroImage, { width, height: heroHeight }]}
+            style={{ position: "absolute", width, height: heroHeight }}
             resizeMode="contain"
             fadeDuration={0}
           />
-          <View style={styles.heroOverlay} />
+          <View style={StyleSheet.absoluteFill as any}>
+            <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.25)" }} />
+          </View>
           <Pressable
             style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
             onPress={() => router.push("/(tabs)/catalog" as any)}
@@ -346,9 +295,7 @@ export default function HomeScreen() {
         {/* ── НОВИНКИ ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Новинки
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Новинки</Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/catalog" as any)}>
               <Text style={[styles.sectionLink, { color: colors.mutedForeground }]}>
                 Все товары →
@@ -358,20 +305,28 @@ export default function HomeScreen() {
 
           {newArrivalsLoading ? (
             <View style={styles.loader}>
-              <ActivityIndicator color={colors.foreground} />
+              <ActivityIndicator color={colors.foreground} size="large" />
+            </View>
+          ) : !newArrivals || newArrivals.length === 0 ? (
+            <View style={styles.loader}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
+                Загрузка новинок...
+              </Text>
             </View>
           ) : (
-            <View style={styles.grid}>
-              {(newArrivals ?? []).map((item) => (
-                <View key={item.id} style={[styles.gridCard, { width: cardWidth }]}>
-                  <ProductCard product={item} />
-                </View>
-              ))}
-            </View>
+            <FlatList
+              data={newArrivals}
+              keyExtractor={(item) => String(item.id)}
+              numColumns={2}
+              scrollEnabled={false}
+              columnWrapperStyle={{ gap: 12, paddingHorizontal: 12 }}
+              contentContainerStyle={{ gap: 12, paddingTop: 12 }}
+              renderItem={renderNewArrivalCard}
+            />
           )}
         </View>
 
-        {/* ── АРТИСТЫ И КОЛЛАБОРАЦИИ ── */}
+        {/* ── АРТИСТЫ (горизонтальная карусель) ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
@@ -382,13 +337,17 @@ export default function HomeScreen() {
             Коллаборации
           </Text>
 
-          <View style={styles.artistsList}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.artistsRow}
+          >
             {ARTISTS.map((artist) => (
               <Pressable
                 key={artist.slug}
                 style={({ pressed }) => [
                   styles.artistCard,
-                  { backgroundColor: colors.card, opacity: pressed ? 0.85 : 1 },
+                  { opacity: pressed ? 0.85 : 1 },
                 ]}
                 onPress={() =>
                   Linking.openURL(`https://booomerangs.ru/artist/${artist.slug}`)
@@ -400,8 +359,8 @@ export default function HomeScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.75)"]}
-                  style={styles.artistGradient}
+                  colors={["transparent", "rgba(0,0,0,0.82)"]}
+                  style={StyleSheet.absoluteFill}
                 />
                 <View style={styles.artistInfo}>
                   <Text style={styles.artistRole}>{artist.role}</Text>
@@ -409,34 +368,22 @@ export default function HomeScreen() {
                 </View>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* ── О БРЕНДЕ ── */}
-        <View style={[styles.section, styles.aboutSection]}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              О бренде
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>О бренде</Text>
           </View>
 
-          <Pressable
-            style={styles.videoBlock}
-            onPress={() => Linking.openURL(ABOUT_VIDEO_URL)}
-          >
-            <Image
-              source={{ uri: ABOUT_IMAGE }}
-              style={styles.videoThumb}
-              resizeMode="cover"
-            />
+          <View style={styles.videoBlock}>
+            <AboutVideo />
             <LinearGradient
-              colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.55)"]}
+              colors={["transparent", "rgba(0,0,0,0.4)"]}
               style={StyleSheet.absoluteFill}
             />
-            <View style={styles.playBtn}>
-              <Feather name="play" size={28} color="#ffffff" />
-            </View>
-          </Pressable>
+          </View>
 
           <View style={styles.aboutText}>
             <Text style={[styles.aboutTitle, { color: colors.foreground }]}>
@@ -453,17 +400,17 @@ export default function HomeScreen() {
         </View>
 
         {/* ── ПОДПИСКА НА EMAIL ── */}
-        <View style={[styles.section, styles.subscribeSection, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.subscribeSection,
+            { backgroundColor: colors.card },
+          ]}
+        >
           <Feather name="mail" size={28} color={colors.foreground} style={{ marginBottom: 12 }} />
           <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: "center" }]}>
             Будьте в курсе
           </Text>
-          <Text
-            style={[
-              styles.subscribeSubtitle,
-              { color: colors.mutedForeground },
-            ]}
-          >
+          <Text style={[styles.subscribeSubtitle, { color: colors.mutedForeground }]}>
             Подпишитесь на новости, новинки и эксклюзивные предложения
           </Text>
 
@@ -509,12 +456,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* ── FILTER DRAWER ── */}
-      <Modal
-        visible={drawerOpen}
-        transparent
-        animationType="none"
-        onRequestClose={closeDrawer}
-      >
+      <Modal visible={drawerOpen} transparent animationType="none" onRequestClose={closeDrawer}>
         <Pressable style={styles.backdrop} onPress={closeDrawer} />
         <Animated.View
           style={[
@@ -529,9 +471,7 @@ export default function HomeScreen() {
           ]}
         >
           <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.drawerTitle, { color: colors.foreground }]}>
-              Каталог
-            </Text>
+            <Text style={[styles.drawerTitle, { color: colors.foreground }]}>Каталог</Text>
             <TouchableOpacity onPress={closeDrawer}>
               <Feather name="x" size={22} color={colors.foreground} />
             </TouchableOpacity>
@@ -540,7 +480,7 @@ export default function HomeScreen() {
           <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
-              onPress={handleDrawerAllPress}
+              onPress={() => { closeDrawer(); router.push("/(tabs)/catalog" as any); }}
             >
               <Text style={[styles.drawerItemText, { color: colors.foreground, fontWeight: "700" }]}>
                 Все товары
@@ -551,12 +491,11 @@ export default function HomeScreen() {
             {categories.map((cat) => {
               const key = (cat.slug ?? String(cat.id)) as string;
               const isExpanded = expandedCat === key;
-
               return (
                 <View key={key}>
                   <TouchableOpacity
                     style={[styles.drawerItem, { borderBottomColor: colors.border }]}
-                    onPress={() => handleDrawerCategoryPress(key)}
+                    onPress={() => setExpandedCat(isExpanded ? null : key)}
                   >
                     <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "500" }]}>
                       {cat.name}
@@ -573,7 +512,10 @@ export default function HomeScreen() {
                       <TouchableOpacity
                         key={sub.slug}
                         style={[styles.drawerSubItem, { borderBottomColor: colors.border }]}
-                        onPress={() => handleDrawerSubPress(sub.name, key)}
+                        onPress={() => {
+                          closeDrawer();
+                          router.push("/(tabs)/catalog" as any);
+                        }}
                       >
                         <View style={[styles.subDot, { backgroundColor: colors.border }]} />
                         <Text style={[styles.drawerSubText, { color: colors.mutedForeground }]}>
@@ -586,7 +528,6 @@ export default function HomeScreen() {
             })}
 
             <View style={[styles.drawerDivider, { borderTopColor: colors.border }]} />
-
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
               onPress={() => { closeDrawer(); router.push("/gift-cards" as any); }}
@@ -596,7 +537,6 @@ export default function HomeScreen() {
                 Подарочные сертификаты
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
               onPress={() => { closeDrawer(); router.push("/(tabs)/profile" as any); }}
@@ -606,7 +546,6 @@ export default function HomeScreen() {
                 Профиль
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
               onPress={() => { closeDrawer(); router.push("/chat" as any); }}
@@ -626,8 +565,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  /* Navbar */
   navbarWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     paddingHorizontal: 12,
     paddingBottom: 10,
     gap: 8,
@@ -647,20 +590,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  navLogoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  navIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 0,
-  },
-  navIconBtn: {
-    padding: 5,
-    position: "relative",
-  },
+  navLogoRow: { flexDirection: "row", alignItems: "center", gap: 2 },
+  navIcons: { flexDirection: "row", alignItems: "center" },
+  navIconBtn: { padding: 5, position: "relative" },
   badge: {
     position: "absolute",
     top: 2,
@@ -673,11 +605,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 3,
   },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#000000",
-  },
+  badgeText: { fontSize: 9, fontWeight: "700", color: "#000000" },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -687,26 +615,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    padding: 0,
-  },
+  searchInput: { flex: 1, fontSize: 14, padding: 0 },
 
-  /* Hero */
-  hero: {
-    position: "relative",
-    marginBottom: 0,
-  },
-  heroImage: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
-  },
   heroBtn: {
     position: "absolute",
     bottom: 140,
@@ -724,18 +634,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  heroBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#ffffff",
-    letterSpacing: 0.4,
-  },
+  heroBtnText: { fontSize: 13, fontWeight: "600", color: "#ffffff", letterSpacing: 0.4 },
 
-  /* Sections */
-  section: {
-    paddingTop: 28,
-    paddingBottom: 8,
-  },
+  section: { paddingTop: 28, paddingBottom: 8 },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -743,121 +644,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 6,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  sectionLink: {
-    fontSize: 13,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  loader: {
-    padding: 32,
-    alignItems: "center",
-  },
+  sectionTitle: { fontSize: 20, fontWeight: "700", letterSpacing: 0.4 },
+  sectionLink: { fontSize: 13 },
+  sectionSubtitle: { fontSize: 13, paddingHorizontal: 16, marginBottom: 14 },
+  loader: { padding: 32, alignItems: "center" },
 
-  /* Новинки grid */
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  /* Артисты — горизонтальная карусель */
+  artistsRow: {
     paddingHorizontal: 12,
     gap: 12,
-    paddingTop: 12,
-  },
-  gridCard: {
-    flex: 0,
-  },
-
-  /* Артисты */
-  artistsList: {
-    paddingHorizontal: 12,
-    gap: 12,
+    paddingBottom: 8,
   },
   artistCard: {
+    width: 200,
+    height: 280,
     borderRadius: 16,
     overflow: "hidden",
-    height: 200,
     position: "relative",
   },
-  artistImage: {
-    width: "100%",
-    height: "100%",
-  },
-  artistGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  artistImage: { width: "100%", height: "100%" },
   artistInfo: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 14,
   },
   artistRole: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.7)",
+    fontSize: 10,
+    color: "rgba(255,255,255,0.75)",
     marginBottom: 4,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
   },
-  artistName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-    letterSpacing: 0.3,
-  },
+  artistName: { fontSize: 16, fontWeight: "700", color: "#ffffff" },
 
-  /* О бренде */
-  aboutSection: {},
+  /* О бренде — видео */
   videoBlock: {
     marginHorizontal: 12,
     borderRadius: 16,
     overflow: "hidden",
     height: 220,
-    alignItems: "center",
-    justifyContent: "center",
     marginBottom: 20,
   },
-  videoThumb: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.4)",
-  },
-  aboutText: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  aboutTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  aboutBody: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  aboutQuote: {
-    fontSize: 16,
-    fontWeight: "600",
-    fontStyle: "italic",
-    lineHeight: 24,
-    marginTop: 8,
-  },
+  videoView: { width: "100%", height: "100%" },
+  aboutText: { paddingHorizontal: 16, gap: 10 },
+  aboutTitle: { fontSize: 22, fontWeight: "700", letterSpacing: 0.3 },
+  aboutBody: { fontSize: 14, lineHeight: 22 },
+  aboutQuote: { fontSize: 16, fontWeight: "600", fontStyle: "italic", lineHeight: 24, marginTop: 8 },
 
   /* Подписка */
   subscribeSection: {
@@ -869,18 +703,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  subscribeSubtitle: {
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  subscribeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    width: "100%",
-  },
+  subscribeSubtitle: { fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 8 },
+  subscribeRow: { flexDirection: "row", alignItems: "center", gap: 10, width: "100%" },
   subscribeInput: {
     flex: 1,
     height: 46,
@@ -897,30 +721,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  subscribeSuccess: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-  },
-  subscribeSuccessText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  subscribeSuccess: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
+  subscribeSuccessText: { fontSize: 15, fontWeight: "600" },
 
   /* Drawer */
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  drawer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: "75%",
-    borderLeftWidth: 1,
-  },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" },
+  drawer: { position: "absolute", top: 0, right: 0, bottom: 0, width: "75%", borderLeftWidth: 1 },
   drawerHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -929,11 +735,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  drawerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
+  drawerTitle: { fontSize: 18, fontWeight: "700", letterSpacing: 0.5 },
   drawerItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -942,9 +744,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  drawerItemText: {
-    fontSize: 15,
-  },
+  drawerItemText: { fontSize: 15 },
   drawerSubItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -954,18 +754,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 10,
   },
-  subDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-  },
-  drawerSubText: {
-    flex: 1,
-    fontSize: 14,
-  },
-  drawerDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
+  subDot: { width: 5, height: 5, borderRadius: 3 },
+  drawerSubText: { flex: 1, fontSize: 14 },
+  drawerDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginVertical: 8, marginHorizontal: 16 },
 });
