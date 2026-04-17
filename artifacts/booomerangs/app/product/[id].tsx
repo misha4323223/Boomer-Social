@@ -145,20 +145,30 @@ export default function ProductScreen() {
 
   const needSize = sizes.length > 0 && !selectedSize;
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/");
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Кнопка назад */}
-      <Pressable
-        onPress={() => router.back()}
-        hitSlop={10}
-        style={({ pressed }) => [
-          styles.floatingBack,
-          { top: insets.top + 12, opacity: pressed ? 0.7 : 1 },
-        ]}
-      >
-        <Feather name="arrow-left" size={20} color="#ffffff" />
-        <Text style={styles.floatingBackText}>Назад</Text>
-      </Pressable>
+      {/* Шапка с кнопкой назад */}
+      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <Pressable
+          onPress={handleBack}
+          hitSlop={8}
+          style={({ pressed }) => [styles.headerBack, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Feather name="arrow-left" size={22} color={colors.foreground} />
+          <Text style={[styles.headerBackText, { color: colors.foreground }]}>Назад</Text>
+        </Pressable>
+        <Pressable onPress={() => toggle(product)} hitSlop={8} style={styles.headerFav}>
+          <Feather name="heart" size={22} color={fav ? "#ff3b30" : colors.mutedForeground} />
+        </Pressable>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
         {/* Галерея изображений */}
@@ -208,9 +218,6 @@ export default function ProductScreen() {
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
-            <Pressable onPress={() => toggle(product)} hitSlop={8}>
-              <Feather name="heart" size={22} color={fav ? "#ff3b30" : colors.mutedForeground} />
-            </Pressable>
           </View>
 
           <View style={styles.priceRow}>
@@ -401,22 +408,27 @@ export default function ProductScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  floatingBack: {
-    position: "absolute",
-    left: 12,
-    zIndex: 100,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerBack: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingRight: 12,
   },
-  floatingBackText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
+  headerBackText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  headerFav: {
+    padding: 8,
   },
   center: {
     flex: 1,
