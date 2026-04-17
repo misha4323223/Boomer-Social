@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -273,18 +274,39 @@ function OrderCard({ order, onCancel, onRefreshTracking, onRefreshYandex, refres
 
       {showItems && items.length > 0 && (
         <View style={[styles.itemsBlock, { borderTopColor: colors.border }]}>
-          {items.map((item, idx) => (
-            <View key={idx} style={styles.itemRow}>
-              <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
-                {item.name}
-                {item.size ? ` · ${item.size}` : ""}
-                {item.color ? ` · ${item.color}` : ""}
-              </Text>
-              <Text style={[styles.itemQty, { color: colors.mutedForeground }]}>
-                {item.quantity} × {formatPrice(item.price)}
-              </Text>
-            </View>
-          ))}
+          {items.map((item, idx) => {
+            const displayName = item.productName || item.name || `Товар ${idx + 1}`;
+            const displaySize = item.size && item.size !== "One Size" && item.size !== "one-size" ? item.size : null;
+            const displayColor = item.color && item.color !== "Default" && item.color !== "default" ? item.color : null;
+            return (
+              <View key={idx} style={[styles.itemRow, { borderBottomColor: colors.border }]}>
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.itemImagePlaceholder, { backgroundColor: colors.card }]}>
+                    <Feather name="image" size={18} color={colors.mutedForeground} />
+                  </View>
+                )}
+                <View style={styles.itemInfo}>
+                  <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
+                    {displayName}
+                  </Text>
+                  {(displaySize || displayColor) && (
+                    <Text style={[styles.itemMeta, { color: colors.mutedForeground }]}>
+                      {[displaySize, displayColor].filter(Boolean).join(" · ")}
+                    </Text>
+                  )}
+                  <Text style={[styles.itemQty, { color: colors.mutedForeground }]}>
+                    {item.quantity} × {formatPrice(item.price)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -599,15 +621,38 @@ const styles = StyleSheet.create({
   itemsBlock: {
     borderTopWidth: 1,
     marginTop: 8,
-    paddingTop: 10,
-    gap: 8,
+    paddingTop: 4,
   },
   itemRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  itemImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+  },
+  itemImagePlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itemInfo: {
+    flex: 1,
     gap: 2,
   },
   itemName: {
     fontSize: 13,
     fontWeight: "500",
+    lineHeight: 18,
+  },
+  itemMeta: {
+    fontSize: 12,
   },
   itemQty: {
     fontSize: 12,

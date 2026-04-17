@@ -88,12 +88,15 @@ export interface CdekData {
 }
 
 export interface RawOrderItem {
-  name: string;
+  productName?: string;
+  name?: string;
   quantity: number;
   price: number;
   sku?: string;
   size?: string;
   color?: string;
+  imageUrl?: string;
+  productId?: number;
 }
 
 export interface Order {
