@@ -52,6 +52,9 @@ function RootLayoutNav() {
       <Stack.Screen name="chat" options={{ title: "Поддержка", headerBackTitle: "" }} />
       <Stack.Screen name="order-success" options={{ headerShown: false }} />
       <Stack.Screen name="cdek-select" options={{ title: "Пункт выдачи СДЭК", headerBackTitle: "" }} />
+      <Stack.Screen name="order-failed" options={{ headerShown: false }} />
+      <Stack.Screen name="gift-cards" options={{ headerShown: false }} />
+      <Stack.Screen name="gift-card-success" options={{ headerShown: false }} />
     </Stack>
   );
 }

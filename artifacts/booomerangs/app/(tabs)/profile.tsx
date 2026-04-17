@@ -357,6 +357,15 @@ export default function ProfileScreen() {
               )}
             </View>
           )}
+          {/* Купить подарочный сертификат */}
+          <Pressable
+            onPress={() => router.push("/gift-cards" as any)}
+            style={[styles.giftBuyBtn, { borderColor: colors.border }]}
+          >
+            <Feather name="gift" size={14} color={colors.mutedForeground} />
+            <Text style={[styles.giftBuyText, { color: colors.foreground }]}>Купить подарочный сертификат</Text>
+            <Feather name="chevron-right" size={14} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
+          </Pressable>
         </View>
 
         {/* Промокоды — всегда видны */}
@@ -1145,6 +1154,19 @@ const styles = StyleSheet.create({
   copyBtn: {
     padding: 8,
     borderRadius: 8,
+  },
+  giftBuyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    marginTop: 4,
+  },
+  giftBuyText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   subRow: {
     flexDirection: "row",

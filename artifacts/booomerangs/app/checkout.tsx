@@ -52,7 +52,7 @@ export default function CheckoutScreen() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState<"yookassa" | "tbank">("yookassa");
+  const [paymentMethod, setPaymentMethod] = useState<"yookassa" | "tbank" | "dolyame">("yookassa");
   const [deliveryType, setDeliveryType] = useState<"pickup" | "door">("pickup");
 
   const [citySearch, setCitySearch] = useState("");
@@ -192,6 +192,10 @@ export default function CheckoutScreen() {
         body.promoCode = promoCode;
       }
 
+      if (paymentMethod === "dolyame") {
+        body.paymentMethod = "yookassa";
+        body.dolyame = true;
+      }
       const res = await api.post("/orders", body);
       console.log("[Checkout] order response:", JSON.stringify(res.data));
 
@@ -456,6 +460,47 @@ export default function CheckoutScreen() {
               </View>
             </Pressable>
           ))}
+          {/* Долями */}
+          <Pressable
+            style={[styles.radioRow, { borderColor: paymentMethod === "dolyame" ? "#22c55e" : colors.border }]}
+            onPress={() => setPaymentMethod("dolyame")}
+          >
+            <View style={[styles.radio, paymentMethod === "dolyame" && styles.radioActive]} />
+            <View style={{ flex: 1 }}>
+              <View style={styles.dolyameRow}>
+                <Text style={[styles.radioLabel, { color: colors.foreground }]}>Долями</Text>
+                <View style={[styles.dolyameBadge, { backgroundColor: colors.foreground }]}>
+                  <Text style={[styles.dolyameBadgeText, { color: colors.background }]}>4 платежа</Text>
+                </View>
+              </View>
+              <Text style={[styles.radioSub, { color: colors.mutedForeground }]}>
+                {formatPrice(Math.round(total / 4))} × 4 · без процентов
+              </Text>
+            </View>
+          </Pressable>
+          {/* Показываем график платежей Долями */}
+          {paymentMethod === "dolyame" && (
+            <View style={[styles.dolyameSchedule, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Text style={[styles.dolyameScheduleTitle, { color: colors.foreground }]}>График платежей:</Text>
+              {(() => {
+                const now = new Date();
+                const fmt = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" });
+                return [0, 1, 2, 3].map((i) => {
+                  const d = new Date(now);
+                  d.setDate(d.getDate() + i * 14);
+                  return (
+                    <View key={i} style={styles.dolyameScheduleRow}>
+                      <View style={[styles.dolyameDot, { backgroundColor: i === 0 ? "#22c55e" : colors.border }]} />
+                      <Text style={[styles.dolyameDate, { color: colors.mutedForeground }]}>{fmt.format(d)}</Text>
+                      <Text style={[styles.dolyameAmount, { color: colors.foreground }]}>
+                        {formatPrice(Math.round(total / 4))}
+                      </Text>
+                    </View>
+                  );
+                });
+              })()}
+            </View>
+          )}
         </View>
 
         {/* Контактные данные */}
@@ -642,6 +687,15 @@ const styles = StyleSheet.create({
   errorText: { color: "#ff3b30", fontSize: 13, textAlign: "center" },
   orderBtn: { height: 56, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
   orderBtnText: { fontSize: 17, fontWeight: "700" },
+  dolyameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  dolyameBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
+  dolyameBadgeText: { fontSize: 10, fontWeight: "700" },
+  dolyameSchedule: { borderRadius: 10, borderWidth: 1, padding: 12, gap: 8 },
+  dolyameScheduleTitle: { fontSize: 13, fontWeight: "700", marginBottom: 4 },
+  dolyameScheduleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  dolyameDot: { width: 8, height: 8, borderRadius: 4 },
+  dolyameDate: { flex: 1, fontSize: 13 },
+  dolyameAmount: { fontSize: 13, fontWeight: "600" },
   selectPointBtn: { flexDirection: "row", alignItems: "center", gap: 10, height: 54, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16 },
   selectPointText: { fontSize: 15, fontWeight: "600" },
   pointSelected: { borderRadius: 12, borderWidth: 2, padding: 12, gap: 6 },

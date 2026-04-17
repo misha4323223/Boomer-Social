@@ -227,6 +227,23 @@ export default function ProductScreen() {
             ) : null}
           </View>
 
+          {/* Долями баджик */}
+          {product.price >= 100000 && (
+            <View style={[styles.dolyameBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.dolyameBars}>
+                {[0.45, 0.65, 0.82, 1.0].map((h, i) => (
+                  <View
+                    key={i}
+                    style={[styles.dolyameBar, { height: 14 * h, backgroundColor: colors.foreground }]}
+                  />
+                ))}
+              </View>
+              <Text style={[styles.dolyameText, { color: colors.foreground }]}>
+                от {new Intl.NumberFormat("ru-RU").format(Math.round(product.price / 4 / 100))} ₽ × 4 платежа без процентов
+              </Text>
+            </View>
+          )}
+
           {product.sku && (
             <Text style={[styles.sku, { color: colors.mutedForeground }]}>
               Артикул: {product.sku}
@@ -458,6 +475,28 @@ const styles = StyleSheet.create({
   },
   sku: {
     fontSize: 12,
+  },
+  dolyameBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  dolyameBars: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  dolyameBar: {
+    width: 4,
+    borderRadius: 2,
+  },
+  dolyameText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   section: {
     gap: 10,
