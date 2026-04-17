@@ -5,12 +5,11 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import Svg, { Text as SvgText } from "react-native-svg";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
-  FlatList,
   Image,
   Modal,
   Pressable,
@@ -171,19 +170,10 @@ export default function HomeScreen() {
 
   const heroHeight = Math.round(width * (1920 / 1080));
 
-  const renderNewArrivalCard = useCallback(
-    ({ item }: { item: Product }) => (
-      <View style={{ width: cardWidth, marginBottom: 12 }}>
-        <ProductCard product={item} />
-      </View>
-    ),
-    [cardWidth]
-  );
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── NAVBAR ── */}
-      <View style={[styles.navbarWrap, { paddingTop: 8 }]}>
+      <View style={[styles.navbarWrap, { paddingTop: insets.top + 4 }]}>
         <View style={styles.navbarOuter}>
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
@@ -314,15 +304,20 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            <FlatList
-              data={newArrivals}
-              keyExtractor={(item) => String(item.id)}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={{ gap: 12, paddingHorizontal: 12 }}
-              contentContainerStyle={{ gap: 12, paddingTop: 12 }}
-              renderItem={renderNewArrivalCard}
-            />
+            <View style={{ paddingHorizontal: 12, paddingTop: 12 }}>
+              {Array.from({ length: Math.ceil(newArrivals.length / 2) }, (_, rowIdx) => (
+                <View
+                  key={rowIdx}
+                  style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}
+                >
+                  {newArrivals.slice(rowIdx * 2, rowIdx * 2 + 2).map((item) => (
+                    <View key={item.id} style={{ width: cardWidth }}>
+                      <ProductCard product={item} />
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
           )}
         </View>
 
