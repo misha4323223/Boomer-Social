@@ -147,6 +147,18 @@ export default function ProductScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Плавающая кнопка назад */}
+      <Pressable
+        onPress={() => router.back()}
+        hitSlop={10}
+        style={({ pressed }) => [
+          styles.floatingBack,
+          { top: insets.top + 8, opacity: pressed ? 0.7 : 1 },
+        ]}
+      >
+        <Feather name="chevron-left" size={22} color="#ffffff" />
+      </Pressable>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
         {/* Галерея изображений */}
         {allImages.length > 1 ? (
@@ -371,6 +383,17 @@ export default function ProductScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  floatingBack: {
+    position: "absolute",
+    left: 12,
+    zIndex: 100,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   center: {
     flex: 1,
     alignItems: "center",

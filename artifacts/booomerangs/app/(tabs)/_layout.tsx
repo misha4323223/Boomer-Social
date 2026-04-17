@@ -1,24 +1,10 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import React from "react";
-import { Platform, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
-
-function BackButton() {
-  const router = useRouter();
-  const colors = useColors();
-  return (
-    <TouchableOpacity
-      onPress={() => router.push("/(tabs)")}
-      style={{ paddingHorizontal: 16, paddingVertical: 8 }}
-    >
-      <Feather name="arrow-left" size={22} color={colors.foreground} />
-    </TouchableOpacity>
-  );
-}
 
 function ChatFab() {
   const router = useRouter();
@@ -41,51 +27,18 @@ function ChatFab() {
 }
 
 export default function TabLayout() {
-  const { totalCount } = useCart();
-  const isIOS = Platform.OS === "ios";
-
   return (
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          headerStyle: { backgroundColor: "#000000" },
-          headerTintColor: "#ffffff",
-          headerShadowVisible: false,
           tabBarStyle: { display: "none" },
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Каталог",
-            headerShown: false,
-          }}
-        />
-        <Tabs.Screen
-          name="cart"
-          options={{
-            title: "Корзина",
-            headerShown: true,
-            headerLeft: () => <BackButton />,
-          }}
-        />
-        <Tabs.Screen
-          name="favorites"
-          options={{
-            title: "Избранное",
-            headerShown: true,
-            headerLeft: () => <BackButton />,
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Профиль",
-            headerShown: true,
-            headerLeft: () => <BackButton />,
-          }}
-        />
+        <Tabs.Screen name="index" options={{ title: "Каталог" }} />
+        <Tabs.Screen name="cart" options={{ title: "Корзина" }} />
+        <Tabs.Screen name="favorites" options={{ title: "Избранное" }} />
+        <Tabs.Screen name="profile" options={{ title: "Профиль" }} />
       </Tabs>
       <ChatFab />
     </View>

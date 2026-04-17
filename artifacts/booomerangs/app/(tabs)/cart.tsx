@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 
+import { CompactHeader } from "@/components/CompactHeader";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 import { formatPrice } from "@/lib/types";
@@ -28,34 +29,41 @@ export default function CartScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.foreground} size="large" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <CompactHeader title="Корзина" />
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.foreground} size="large" />
+        </View>
       </View>
     );
   }
 
   if (items.length === 0) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Feather name="shopping-cart" size={56} color={colors.mutedForeground} />
-        <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Корзина пуста</Text>
-        <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-          Добавьте товары из каталога
-        </Text>
-        <Pressable
-          onPress={() => router.push("/(tabs)/")}
-          style={[styles.shopBtn, { backgroundColor: colors.foreground }]}
-        >
-          <Text style={[styles.shopBtnText, { color: colors.background }]}>
-            Перейти в каталог
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <CompactHeader title="Корзина" />
+        <View style={styles.center}>
+          <Feather name="shopping-cart" size={56} color={colors.mutedForeground} />
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Корзина пуста</Text>
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+            Добавьте товары из каталога
           </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => router.push("/(tabs)/")}
+            style={[styles.shopBtn, { backgroundColor: colors.foreground }]}
+          >
+            <Text style={[styles.shopBtnText, { color: colors.background }]}>
+              Перейти в каталог
+            </Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: tabBarHeight }]}>
+      <CompactHeader title="Корзина" />
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}

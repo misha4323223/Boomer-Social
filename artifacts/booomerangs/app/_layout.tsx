@@ -41,16 +41,17 @@ function RootLayoutNav() {
         headerStyle: { backgroundColor: "#000000" },
         headerTintColor: "#ffffff",
         headerShadowVisible: false,
+        headerTitleStyle: { fontSize: 16, fontWeight: "600" },
         contentStyle: { backgroundColor: "#000000" },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="product/[id]" options={{ title: "", headerBackTitle: "Назад" }} />
-      <Stack.Screen name="orders" options={{ title: "Мои заказы" }} />
-      <Stack.Screen name="checkout" options={{ title: "Оформление заказа" }} />
-      <Stack.Screen name="chat" options={{ title: "Поддержка" }} />
+      <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="orders" options={{ title: "Мои заказы", headerBackTitle: "" }} />
+      <Stack.Screen name="checkout" options={{ title: "Оформление заказа", headerBackTitle: "" }} />
+      <Stack.Screen name="chat" options={{ title: "Поддержка", headerBackTitle: "" }} />
       <Stack.Screen name="order-success" options={{ headerShown: false }} />
-      <Stack.Screen name="cdek-select" options={{ title: "Пункт выдачи СДЭК" }} />
+      <Stack.Screen name="cdek-select" options={{ title: "Пункт выдачи СДЭК", headerBackTitle: "" }} />
     </Stack>
   );
 }

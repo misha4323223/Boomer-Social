@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CompactHeader } from "@/components/CompactHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import api, { proxyApi } from "@/lib/api";
@@ -164,8 +165,11 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.foreground} size="large" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <CompactHeader title="Профиль" />
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.foreground} size="large" />
+        </View>
       </View>
     );
   }
@@ -715,8 +719,10 @@ export default function ProfileScreen() {
     );
 
     return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <CompactHeader title="Профиль" />
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
       >
@@ -750,6 +756,7 @@ export default function ProfileScreen() {
         {activeTab === "settings" && renderSettings()}
         {activeTab === "subscriptions" && renderSubscriptions()}
       </ScrollView>
+      </View>
     );
   }
 
@@ -781,7 +788,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
