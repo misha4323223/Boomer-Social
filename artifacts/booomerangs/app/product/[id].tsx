@@ -147,16 +147,17 @@ export default function ProductScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Плавающая кнопка назад */}
+      {/* Кнопка назад */}
       <Pressable
         onPress={() => router.back()}
         hitSlop={10}
         style={({ pressed }) => [
           styles.floatingBack,
-          { top: insets.top + 8, opacity: pressed ? 0.7 : 1 },
+          { top: insets.top + 12, opacity: pressed ? 0.7 : 1 },
         ]}
       >
-        <Feather name="chevron-left" size={22} color="#ffffff" />
+        <Feather name="arrow-left" size={20} color="#ffffff" />
+        <Text style={styles.floatingBackText}>Назад</Text>
       </Pressable>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
@@ -176,8 +177,8 @@ export default function ProductScreen() {
               renderItem={({ item }) => (
                 <Image
                   source={{ uri: item }}
-                  style={{ width, height: width * 1.1 }}
-                  contentFit="cover"
+                  style={{ width, height: width * 1.35, backgroundColor: "#1a1a1a" }}
+                  contentFit="contain"
                 />
               )}
             />
@@ -199,8 +200,8 @@ export default function ProductScreen() {
         ) : (
           <Image
             source={{ uri: allImages[0] }}
-            style={[styles.productImage, { width }]}
-            contentFit="cover"
+            style={[styles.productImage, { width, backgroundColor: "#1a1a1a" }]}
+            contentFit="contain"
           />
         )}
 
@@ -404,12 +405,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 12,
     zIndex: 100,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  floatingBackText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   center: {
     flex: 1,
@@ -426,7 +433,7 @@ const styles = StyleSheet.create({
   },
   backBtnText: { fontSize: 14, fontWeight: "600" },
   productImage: {
-    height: width * 1.1,
+    height: width * 1.35,
   },
   dots: {
     flexDirection: "row",
