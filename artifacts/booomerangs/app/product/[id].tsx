@@ -228,7 +228,7 @@ export default function ProductScreen() {
           </View>
 
           {/* Долями баджик */}
-          {product.price >= 100000 && (
+          {product.price >= 300000 && (
             <View style={[styles.dolyameBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.dolyameBars}>
                 {[0.45, 0.65, 0.82, 1.0].map((h, i) => (

@@ -71,6 +71,23 @@ export function ProductCard({ product }: Props) {
           {formatPrice(product.price)}
         </Text>
 
+        {product.price >= 300000 && (
+          <View style={[styles.dolyame, { borderColor: colors.border }]}>
+            <View style={styles.dolyameBars}>
+              {[0.45, 0.65, 0.82, 1.0].map((h, i) => (
+                <View
+                  key={i}
+                  style={[styles.dolyameBar, { height: 9 * h, backgroundColor: colors.foreground }]}
+                />
+              ))}
+            </View>
+            <Text style={[styles.dolyameLabel, { color: colors.foreground }]}>ДОЛЯМИ</Text>
+            <Text style={[styles.dolyameAmt, { color: colors.mutedForeground }]}>
+              4 × {new Intl.NumberFormat("ru-RU").format(Math.round(product.price / 4 / 100))} ₽
+            </Text>
+          </View>
+        )}
+
         {product.inStock === false && (
           <Text style={styles.outOfStock}>Нет в наличии</Text>
         )}
@@ -137,6 +154,34 @@ const styles = StyleSheet.create({
   outOfStock: {
     fontSize: 11,
     color: "#ef4444",
+    fontWeight: "500",
+  },
+  dolyame: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+  },
+  dolyameBars: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 1.5,
+  },
+  dolyameBar: {
+    width: 3,
+    borderRadius: 1.5,
+  },
+  dolyameLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  dolyameAmt: {
+    fontSize: 9,
     fontWeight: "500",
   },
 });
