@@ -49,7 +49,7 @@ export default function CartScreen() {
             Добавьте товары из каталога
           </Text>
           <Pressable
-            onPress={() => router.push("/(tabs)/")}
+            onPress={() => router.push("/")}
             style={[styles.shopBtn, { backgroundColor: colors.foreground }]}
           >
             <Text style={[styles.shopBtnText, { color: colors.background }]}>

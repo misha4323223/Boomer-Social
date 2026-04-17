@@ -224,7 +224,7 @@ export default function CheckoutScreen() {
         } else {
           await WebBrowser.openBrowserAsync(paymentUrl);
         }
-        router.replace("/(tabs)/");
+        router.replace("/");
       } else {
         router.replace("/order-success" as any);
       }

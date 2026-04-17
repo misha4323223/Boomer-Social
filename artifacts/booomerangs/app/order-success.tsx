@@ -21,7 +21,7 @@ export default function OrderSuccessScreen() {
       </Text>
       <Pressable
         style={[styles.btn, { backgroundColor: colors.foreground }]}
-        onPress={() => router.replace("/(tabs)/")}
+        onPress={() => router.replace("/")}
       >
         <Text style={[styles.btnText, { color: colors.background }]}>На главную</Text>
       </Pressable>

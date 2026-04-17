@@ -31,7 +31,7 @@ export default function FavoritesScreen() {
             Нажмите на сердечко у товара, чтобы добавить
           </Text>
           <Pressable
-            onPress={() => router.push("/(tabs)/")}
+            onPress={() => router.push("/")}
             style={[styles.shopBtn, { backgroundColor: colors.foreground }]}
           >
             <Text style={[styles.shopBtnText, { color: colors.background }]}>В каталог</Text>

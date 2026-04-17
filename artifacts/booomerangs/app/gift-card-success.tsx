@@ -139,7 +139,7 @@ export default function GiftCardSuccessScreen() {
 
       <Pressable
         style={[styles.btn, { backgroundColor: colors.foreground }]}
-        onPress={() => router.replace("/(tabs)/")}
+        onPress={() => router.replace("/")}
       >
         <Text style={[styles.btnText, { color: colors.background }]}>Продолжить покупки</Text>
       </Pressable>

@@ -47,7 +47,7 @@ export default function OrderFailedScreen() {
       </Pressable>
       <Pressable
         style={[styles.btnOutline, { borderColor: colors.border }]}
-        onPress={() => router.replace("/(tabs)/")}
+        onPress={() => router.replace("/")}
       >
         <Text style={[styles.btnOutlineText, { color: colors.foreground }]}>На главную</Text>
       </Pressable>

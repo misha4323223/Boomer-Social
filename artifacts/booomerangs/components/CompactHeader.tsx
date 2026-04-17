@@ -21,7 +21,7 @@ export function CompactHeader({ title, onBack }: CompactHeaderProps) {
     } else if (router.canGoBack()) {
       router.back();
     } else {
-      router.push("/(tabs)/");
+      router.push("/");
     }
   };
 
