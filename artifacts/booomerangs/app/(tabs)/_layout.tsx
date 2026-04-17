@@ -35,7 +35,8 @@ export default function TabLayout() {
           tabBarStyle: { display: "none" },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: "Каталог" }} />
+        <Tabs.Screen name="index" options={{ title: "Главная" }} />
+        <Tabs.Screen name="catalog" options={{ title: "Каталог" }} />
         <Tabs.Screen name="cart" options={{ title: "Корзина" }} />
         <Tabs.Screen name="favorites" options={{ title: "Избранное" }} />
         <Tabs.Screen name="profile" options={{ title: "Профиль" }} />

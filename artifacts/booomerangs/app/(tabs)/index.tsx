@@ -1,13 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Linking from "expo-linking";
 import Svg, { Text as SvgText } from "react-native-svg";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
-  FlatList,
   Image,
   Modal,
   Pressable,
@@ -27,18 +29,58 @@ import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
 import { Category, Product } from "@/lib/types";
 
-interface ProductsPage {
-  products: Product[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-}
+const HERO_IMAGE =
+  "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
 
-const PAGE_SIZE = 20;
+const ABOUT_VIDEO_URL =
+  "https://storage.yandexcloud.net/bmg/media/identity/cinematic_dark_urban_streetwear_video.mp4";
+
+const ABOUT_IMAGE = "https://booomerangs.ru/images/about-hero.webp";
+
+const ARTISTS = [
+  {
+    name: "Молодость внутри",
+    role: "Российский музыкальный проект",
+    image:
+      "https://storage.yandexcloud.net/bmg/site/1776262370869_1772387062458_ma9KLUtnPnyXq4i1DwjZGY73haCdfJ7PWeiuidqQ9K1uLXTpItP7XztxTDZO7Dye_QPZtWWdvb64tbh9AUJvnZjc_thumb.webp",
+    slug: "molodostvnutri",
+  },
+  {
+    name: "ДРАГНИ",
+    role: "Музыкант / Рок-артист",
+    image:
+      "https://storage.yandexcloud.net/bmg/products/import_files_66_66e697c8df2611f0976200155dfb0049_f4eb0c7edf2711f0976200155dfb0049_thumb.webp?v=1769981452453",
+    slug: "dragni",
+  },
+  {
+    name: "МультFильмы",
+    role: "Брит-поп / Поп-рок",
+    image:
+      "https://storage.yandexcloud.net/bmg/products/import_files_f4_f457bfdeba4a11f08e6f00155daa8342_91de0b8cba4b11f08e6f00155daa8342_thumb.webp?v=1769982964183",
+    slug: "multfilmy",
+  },
+  {
+    name: "ГУДТАЙМС",
+    role: "Ска-панк группа",
+    image:
+      "https://storage.yandexcloud.net/bmg/products/import_files_ac_ac81a76c948c11f0808100155d46f61a_e26ef028948c11f0808100155d46f61a_thumb.webp?v=1769980812532",
+    slug: "goodtimes",
+  },
+  {
+    name: "ДИКАЯ МЯТА",
+    role: "Музыкальный фестиваль",
+    image:
+      "https://storage.yandexcloud.net/bmg/products/import_files_8f_8f9864b63bb711f0925a00155d46f61a_e8f700ec3bcd11f0925a00155d46f61a_thumb.webp?v=1769981814146",
+    slug: "dikaya-myata",
+  },
+  {
+    name: "BOOOMERANGS × ТУЛЬСКИЕ ДИЗАЙНЕРЫ",
+    role: "Коллаборация",
+    image:
+      "https://storage.yandexcloud.net/bmg/site/1776262413983_1772387940947_import_files_30_30dea81a874611f084a300155d46f61a_2c7d4c00875911f084a300155d46f61a_thumb.webp",
+    slug: "artist-1772387909100",
+  },
+];
 
 function parseCategoriesResponse(data: any): Category[] {
   if (Array.isArray(data)) return data;
@@ -53,10 +95,7 @@ function parseCategoriesResponse(data: any): Category[] {
   return [];
 }
 
-const HERO_IMAGE =
-  "https://storage.yandexcloud.net/bmg/site/1774013492827_1080___1920_1774013001765.webp";
-
-export default function CatalogScreen() {
+export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -65,15 +104,17 @@ export default function CatalogScreen() {
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [subscribeSuccess, setSubscribeSuccess] = useState(false);
 
   const drawerAnim = useRef(new Animated.Value(width)).current;
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flatListRef = useRef<any>(null);
 
   const openDrawer = () => {
     setDrawerOpen(true);
@@ -113,21 +154,16 @@ export default function CatalogScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: newArrivals } = useQuery<Product[]>({
+  const { data: newArrivals, isLoading: newArrivalsLoading } = useQuery<Product[]>({
     queryKey: ["new-arrivals"],
     queryFn: async () => {
-      const res = await api.get("/products", { params: { isNew: true, limit: 10 } });
-      return (res.data?.products ?? []).filter((p: Product) => p.isNew);
+      const res = await api.get("/products", { params: { isNew: true, limit: 16 } });
+      return (res.data?.products ?? []).filter((p: Product) => p.isNew).slice(0, 16);
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const categories: Category[] = categoriesRaw ?? [];
-
-  const handleCategorySelect = (key: string | null) => {
-    setSelectedCategory(key);
-    setSelectedSubcategory(null);
-  };
 
   const handleDrawerCategoryPress = (key: string) => {
     setExpandedCat(expandedCat === key ? null : key);
@@ -137,170 +173,51 @@ export default function CatalogScreen() {
     setSelectedCategory(catKey);
     setSelectedSubcategory(subName);
     closeDrawer();
+    router.push("/(tabs)/catalog" as any);
   };
 
   const handleDrawerAllPress = () => {
     setSelectedCategory(null);
     setSelectedSubcategory(null);
     closeDrawer();
+    router.push("/(tabs)/catalog" as any);
   };
 
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch,
-  } = useInfiniteQuery<ProductsPage>({
-    queryKey: ["products", selectedCategory, selectedSubcategory, debouncedSearch],
-    queryFn: async ({ pageParam = 1 }) => {
-      const params: Record<string, string | number> = {
-        page: pageParam as number,
-        limit: PAGE_SIZE,
-      };
-      if (selectedCategory) params.category = selectedCategory;
-      if (selectedSubcategory) params.subcategory = selectedSubcategory;
-      if (debouncedSearch) params.search = debouncedSearch;
-      const res = await api.get("/products", { params });
-      const products: Product[] = res.data?.products ?? res.data ?? [];
-      const pagination = res.data?.pagination ?? {
-        page: pageParam as number,
-        limit: PAGE_SIZE,
-        total: products.length,
-        totalPages: 1,
-        hasMore: false,
-      };
-      return { products, pagination };
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined,
-  });
-
-  const products = data?.pages.flatMap((p) => p.products) ?? [];
-
-  const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const handleGoToCollection = () => {
-    setSelectedCategory(null);
-    setSelectedSubcategory("Молодость внутри");
-    setSearch("");
-    setDebouncedSearch("");
+  const handleSubscribe = async () => {
+    if (!email.trim()) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Ошибка", "Введите корректный email");
+      return;
+    }
+    setSubscribeLoading(true);
+    try {
+      await api.post("/newsletter/subscribe", { email: email.trim(), source: "mobile" });
+      setSubscribeSuccess(true);
+      setEmail("");
+    } catch {
+      Alert.alert("Ошибка", "Не удалось подписаться. Попробуйте позже.");
+    } finally {
+      setSubscribeLoading(false);
+    }
   };
 
-  const activeFilterLabel = selectedSubcategory
-    ? selectedSubcategory
-    : selectedCategory
-    ? categories.find((c) => (c.slug ?? String(c.id)) === selectedCategory)?.name ?? null
-    : null;
-
-  const heroHeight = useMemo(() => Math.round(width * (1920 / 1080)), [width]);
-  const heroSource = useMemo(() => ({ uri: HERO_IMAGE }), []);
-
-  const renderNewArrivals = useCallback(() => {
-    if (!newArrivals || newArrivals.length === 0) return null;
-    return (
-      <View style={styles.sectionBlock}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Новинки</Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.newArrivalsRow}
-        >
-          {newArrivals.map((item) => (
-            <Pressable
-              key={item.id}
-              style={[styles.newArrivalCard, { backgroundColor: colors.card }]}
-              onPress={() => router.push(`/product/${item.id}` as any)}
-            >
-              <Image
-                source={{ uri: item.thumbnailUrl ?? item.imageUrl }}
-                style={styles.newArrivalImg}
-                resizeMode="cover"
-              />
-              {item.isNew && (
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NEW</Text>
-                </View>
-              )}
-              <View style={styles.newArrivalInfo}>
-                <Text style={[styles.newArrivalName, { color: colors.foreground }]} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.newArrivalPrice, { color: colors.foreground }]}>
-                  {(item.price / 100).toLocaleString("ru-RU")} ₽
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-    );
-  }, [newArrivals, colors, router]);
-
-  const renderHero = useCallback(() => (
-    <>
-      <View style={[styles.hero, { width, height: heroHeight }]}>
-        <Image
-          source={heroSource}
-          style={[styles.heroImage, { width, height: heroHeight }]}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-        <View style={styles.heroOverlay} />
-        <Pressable
-          style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
-          onPress={handleGoToCollection}
-        >
-          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.heroBtnContent}>
-            <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
-            <Feather name="arrow-right" size={13} color="#ffffff" />
-          </View>
-        </Pressable>
-      </View>
-      {renderNewArrivals()}
-      <View style={styles.allProductsHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Все товары</Text>
-      </View>
-    </>
-  ), [width, heroHeight, heroSource, handleGoToCollection, renderNewArrivals]);
-
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator color={colors.foreground} size="small" />
-      </View>
-    );
-  };
+  const heroHeight = Math.round(width * (1920 / 1080));
+  const cardWidth = (width - 12 * 3) / 2;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ── TOP NAVBAR (pill, like site) ── */}
-      <View style={[styles.navbarWrap, { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingTop: 8 }]}>
+      {/* ── TOP NAVBAR ── */}
+      <View
+        style={[
+          styles.navbarWrap,
+          { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingTop: 8 },
+        ]}
+      >
         <View style={styles.navbarOuter}>
           <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.navbarInner}>
-            {/* Logo */}
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedCategory(null);
-                setSelectedSubcategory(null);
-                setSearch("");
-                setDebouncedSearch("");
-                setSearchVisible(false);
-                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-              }}
-              style={styles.navLogoRow}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.navLogoRow} activeOpacity={0.7}>
               <Svg width={58} height={32}>
                 <SvgText
                   stroke="#ffffff"
@@ -331,7 +248,6 @@ export default function CatalogScreen() {
               </Svg>
             </TouchableOpacity>
 
-            {/* Right icons */}
             <View style={styles.navIcons}>
               <TouchableOpacity
                 onPress={() => setSearchVisible((v) => !v)}
@@ -343,14 +259,12 @@ export default function CatalogScreen() {
                   color="#ffffff"
                 />
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/favorites")}
                 style={styles.navIconBtn}
               >
                 <Feather name="heart" size={21} color="#ffffff" />
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/cart")}
                 style={styles.navIconBtn}
@@ -364,14 +278,12 @@ export default function CatalogScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/profile")}
                 style={styles.navIconBtn}
               >
                 <Feather name="user" size={21} color="#ffffff" />
               </TouchableOpacity>
-
               <TouchableOpacity onPress={openDrawer} style={styles.navIconBtn}>
                 <Feather name="menu" size={22} color="#ffffff" />
               </TouchableOpacity>
@@ -379,7 +291,6 @@ export default function CatalogScreen() {
           </View>
         </View>
 
-        {/* Search bar (toggleable) */}
         {searchVisible && (
           <View
             style={[
@@ -404,83 +315,198 @@ export default function CatalogScreen() {
             )}
           </View>
         )}
-
-        {/* Active filter pill */}
-        {activeFilterLabel && (
-          <View style={styles.activePillRow}>
-            <View style={[styles.activePill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.activePillText, { color: colors.foreground }]}>
-                {activeFilterLabel}
-              </Text>
-              <Pressable
-                onPress={() => {
-                  setSelectedCategory(null);
-                  setSelectedSubcategory(null);
-                }}
-              >
-                <Feather name="x" size={13} color={colors.mutedForeground} />
-              </Pressable>
-            </View>
-          </View>
-        )}
       </View>
 
-      {/* ── PRODUCT LIST ── */}
-      {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.foreground} size="large" />
-        </View>
-      ) : isError ? (
-        <View style={styles.center}>
-          <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
-            Ошибка загрузки товаров
-          </Text>
+      {/* ── MAIN SCROLL ── */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
+      >
+        {/* HERO */}
+        <View style={[styles.hero, { width, height: heroHeight }]}>
+          <Image
+            source={{ uri: HERO_IMAGE }}
+            style={[styles.heroImage, { width, height: heroHeight }]}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+          <View style={styles.heroOverlay} />
           <Pressable
-            onPress={() => refetch()}
-            style={[styles.retryBtn, { borderColor: colors.border }]}
+            style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
+            onPress={() => router.push("/(tabs)/catalog" as any)}
           >
-            <Text style={[styles.retryText, { color: colors.foreground }]}>
-              Повторить
-            </Text>
+            <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={styles.heroBtnContent}>
+              <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
+              <Feather name="arrow-right" size={13} color="#ffffff" />
+            </View>
           </Pressable>
         </View>
-      ) : products.length === 0 ? (
-        <View style={styles.center}>
-          <Feather name="package" size={48} color={colors.mutedForeground} />
-          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-            Товары не найдены
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={products}
-          keyExtractor={(item) => String(item.id)}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={[
-            styles.list,
-            {
-              paddingBottom: insets.bottom + 90,
-              paddingTop: (!selectedCategory && !selectedSubcategory && !debouncedSearch) ? 0 : insets.top + 70,
-            },
-          ]}
-          renderItem={({ item }) => (
-            <View style={styles.cardWrapper}>
-              <ProductCard product={item} />
+
+        {/* ── НОВИНКИ ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Новинки
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/catalog" as any)}>
+              <Text style={[styles.sectionLink, { color: colors.mutedForeground }]}>
+                Все товары →
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {newArrivalsLoading ? (
+            <View style={styles.loader}>
+              <ActivityIndicator color={colors.foreground} />
+            </View>
+          ) : (
+            <View style={styles.grid}>
+              {(newArrivals ?? []).map((item) => (
+                <View key={item.id} style={[styles.gridCard, { width: cardWidth }]}>
+                  <ProductCard product={item} />
+                </View>
+              ))}
             </View>
           )}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.4}
-          ListHeaderComponent={
-            !selectedCategory && !selectedSubcategory && !debouncedSearch
-              ? renderHero
-              : null
-          }
-          ListFooterComponent={renderFooter}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        </View>
+
+        {/* ── АРТИСТЫ И КОЛЛАБОРАЦИИ ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Артисты и фестивали
+            </Text>
+          </View>
+          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+            Коллаборации
+          </Text>
+
+          <View style={styles.artistsList}>
+            {ARTISTS.map((artist) => (
+              <Pressable
+                key={artist.slug}
+                style={({ pressed }) => [
+                  styles.artistCard,
+                  { backgroundColor: colors.card, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={() =>
+                  Linking.openURL(`https://booomerangs.ru/artist/${artist.slug}`)
+                }
+              >
+                <Image
+                  source={{ uri: artist.image }}
+                  style={styles.artistImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.75)"]}
+                  style={styles.artistGradient}
+                />
+                <View style={styles.artistInfo}>
+                  <Text style={styles.artistRole}>{artist.role}</Text>
+                  <Text style={styles.artistName}>{artist.name}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* ── О БРЕНДЕ ── */}
+        <View style={[styles.section, styles.aboutSection]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              О бренде
+            </Text>
+          </View>
+
+          <Pressable
+            style={styles.videoBlock}
+            onPress={() => Linking.openURL(ABOUT_VIDEO_URL)}
+          >
+            <Image
+              source={{ uri: ABOUT_IMAGE }}
+              style={styles.videoThumb}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.55)"]}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.playBtn}>
+              <Feather name="play" size={28} color="#ffffff" />
+            </View>
+          </Pressable>
+
+          <View style={styles.aboutText}>
+            <Text style={[styles.aboutTitle, { color: colors.foreground }]}>
+              Мы — BOOOMERANGS
+            </Text>
+            <Text style={[styles.aboutBody, { color: colors.mutedForeground }]}>
+              Базируясь в Туле — городе мастеров, пряников и самоваров — мы создаём вещи для
+              повседневной жизни. Более 200 моделей носков и собственная линейка одежды.
+            </Text>
+            <Text style={[styles.aboutQuote, { color: colors.foreground }]}>
+              «Делаем вещи,{"\n"}которые носим сами»
+            </Text>
+          </View>
+        </View>
+
+        {/* ── ПОДПИСКА НА EMAIL ── */}
+        <View style={[styles.section, styles.subscribeSection, { backgroundColor: colors.card }]}>
+          <Feather name="mail" size={28} color={colors.foreground} style={{ marginBottom: 12 }} />
+          <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: "center" }]}>
+            Будьте в курсе
+          </Text>
+          <Text
+            style={[
+              styles.subscribeSubtitle,
+              { color: colors.mutedForeground },
+            ]}
+          >
+            Подпишитесь на новости, новинки и эксклюзивные предложения
+          </Text>
+
+          {subscribeSuccess ? (
+            <View style={styles.subscribeSuccess}>
+              <Feather name="check-circle" size={22} color="#4CAF50" />
+              <Text style={[styles.subscribeSuccessText, { color: colors.foreground }]}>
+                Вы подписались! Спасибо.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.subscribeRow}>
+              <TextInput
+                style={[
+                  styles.subscribeInput,
+                  {
+                    color: colors.foreground,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+                placeholder="Ваш email"
+                placeholderTextColor={colors.mutedForeground}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[styles.subscribeBtn, subscribeLoading && { opacity: 0.7 }]}
+                onPress={handleSubscribe}
+                disabled={subscribeLoading}
+              >
+                {subscribeLoading ? (
+                  <ActivityIndicator color="#000" size="small" />
+                ) : (
+                  <Feather name="arrow-right" size={20} color="#000000" />
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
       {/* ── FILTER DRAWER ── */}
       <Modal
@@ -489,10 +515,7 @@ export default function CatalogScreen() {
         animationType="none"
         onRequestClose={closeDrawer}
       >
-        {/* Backdrop */}
         <Pressable style={styles.backdrop} onPress={closeDrawer} />
-
-        {/* Drawer panel */}
         <Animated.View
           style={[
             styles.drawer,
@@ -505,10 +528,9 @@ export default function CatalogScreen() {
             },
           ]}
         >
-          {/* Drawer header */}
           <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.drawerTitle, { color: colors.foreground }]}>
-              Фильтр
+              Каталог
             </Text>
             <TouchableOpacity onPress={closeDrawer}>
               <Feather name="x" size={22} color={colors.foreground} />
@@ -516,127 +538,58 @@ export default function CatalogScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-            {/* "All" item */}
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
               onPress={handleDrawerAllPress}
             >
-              <Text
-                style={[
-                  styles.drawerItemText,
-                  {
-                    color:
-                      !selectedCategory && !selectedSubcategory
-                        ? colors.foreground
-                        : colors.mutedForeground,
-                    fontWeight:
-                      !selectedCategory && !selectedSubcategory ? "700" : "400",
-                  },
-                ]}
-              >
+              <Text style={[styles.drawerItemText, { color: colors.foreground, fontWeight: "700" }]}>
                 Все товары
               </Text>
-              {!selectedCategory && !selectedSubcategory && (
-                <Feather name="check" size={16} color={colors.foreground} />
-              )}
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
             </TouchableOpacity>
 
-            {/* Category accordion */}
             {categories.map((cat) => {
               const key = (cat.slug ?? String(cat.id)) as string;
               const isExpanded = expandedCat === key;
-              const isCatActive =
-                selectedCategory === key && !selectedSubcategory;
 
               return (
                 <View key={key}>
-                  {/* Category row */}
                   <TouchableOpacity
-                    style={[
-                      styles.drawerItem,
-                      { borderBottomColor: colors.border },
-                    ]}
+                    style={[styles.drawerItem, { borderBottomColor: colors.border }]}
                     onPress={() => handleDrawerCategoryPress(key)}
                   >
-                    <Text
-                      style={[
-                        styles.drawerItemText,
-                        {
-                          color: isCatActive
-                            ? colors.foreground
-                            : colors.mutedForeground,
-                          fontWeight: isCatActive ? "700" : "500",
-                        },
-                      ]}
-                    >
+                    <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "500" }]}>
                       {cat.name}
                     </Text>
-                    <View style={styles.drawerItemRight}>
-                      {isCatActive && (
-                        <Feather
-                          name="check"
-                          size={14}
-                          color={colors.foreground}
-                        />
-                      )}
-                      <Feather
-                        name={isExpanded ? "chevron-up" : "chevron-down"}
-                        size={16}
-                        color={colors.mutedForeground}
-                      />
-                    </View>
+                    <Feather
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color={colors.mutedForeground}
+                    />
                   </TouchableOpacity>
 
-                  {/* Subcategories */}
                   {isExpanded &&
-                    cat.subcategories?.map((sub) => {
-                      const isSubActive = selectedSubcategory === sub.name;
-                      return (
-                        <TouchableOpacity
-                          key={sub.slug}
-                          style={[
-                            styles.drawerSubItem,
-                            { borderBottomColor: colors.border },
-                          ]}
-                          onPress={() => handleDrawerSubPress(sub.name, key)}
-                        >
-                          <View style={[styles.subDot, { backgroundColor: colors.border }]} />
-                          <Text
-                            style={[
-                              styles.drawerSubText,
-                              {
-                                color: isSubActive
-                                  ? colors.foreground
-                                  : colors.mutedForeground,
-                                fontWeight: isSubActive ? "600" : "400",
-                              },
-                            ]}
-                          >
-                            {sub.name}
-                          </Text>
-                          {isSubActive && (
-                            <Feather
-                              name="check"
-                              size={13}
-                              color={colors.foreground}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
+                    cat.subcategories?.map((sub) => (
+                      <TouchableOpacity
+                        key={sub.slug}
+                        style={[styles.drawerSubItem, { borderBottomColor: colors.border }]}
+                        onPress={() => handleDrawerSubPress(sub.name, key)}
+                      >
+                        <View style={[styles.subDot, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.drawerSubText, { color: colors.mutedForeground }]}>
+                          {sub.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                 </View>
               );
             })}
 
-            {/* Прочее */}
             <View style={[styles.drawerDivider, { borderTopColor: colors.border }]} />
 
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
-              onPress={() => {
-                closeDrawer();
-                router.push("/gift-cards" as any);
-              }}
+              onPress={() => { closeDrawer(); router.push("/gift-cards" as any); }}
             >
               <Feather name="gift" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
               <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
@@ -646,10 +599,7 @@ export default function CatalogScreen() {
 
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
-              onPress={() => {
-                closeDrawer();
-                router.push("/(tabs)/profile" as any);
-              }}
+              onPress={() => { closeDrawer(); router.push("/(tabs)/profile" as any); }}
             >
               <Feather name="user" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
               <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
@@ -659,10 +609,7 @@ export default function CatalogScreen() {
 
             <TouchableOpacity
               style={[styles.drawerItem, { borderBottomColor: colors.border }]}
-              onPress={() => {
-                closeDrawer();
-                router.push("/chat" as any);
-              }}
+              onPress={() => { closeDrawer(); router.push("/chat" as any); }}
             >
               <Feather name="message-circle" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
               <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
@@ -739,35 +686,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    marginHorizontal: 0,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     padding: 0,
   },
-  activePillRow: {
-    flexDirection: "row",
-    paddingHorizontal: 4,
-  },
-  activePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  activePillText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
 
   /* Hero */
   hero: {
     position: "relative",
-    marginBottom: 8,
+    marginBottom: 0,
   },
   heroImage: {
     position: "absolute",
@@ -802,26 +731,182 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
 
-  /* List */
-  row: { gap: 12, paddingHorizontal: 12 },
-  list: { gap: 12, paddingTop: 12 },
-  cardWrapper: { flex: 1 },
-  footerLoader: { padding: 16, alignItems: "center" },
-  center: {
-    flex: 1,
+  /* Sections */
+  section: {
+    paddingTop: 28,
+    paddingBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 6,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  sectionLink: {
+    fontSize: 13,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  loader: {
+    padding: 32,
+    alignItems: "center",
+  },
+
+  /* Новинки grid */
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 12,
+    gap: 12,
+    paddingTop: 12,
+  },
+  gridCard: {
+    flex: 0,
+  },
+
+  /* Артисты */
+  artistsList: {
+    paddingHorizontal: 12,
     gap: 12,
   },
-  errorText: { fontSize: 15 },
-  emptyText: { fontSize: 15 },
-  retryBtn: {
-    borderWidth: 1,
-    borderRadius: 8,
+  artistCard: {
+    borderRadius: 16,
+    overflow: "hidden",
+    height: 200,
+    position: "relative",
+  },
+  artistImage: {
+    width: "100%",
+    height: "100%",
+  },
+  artistGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  artistInfo: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+  },
+  artistRole: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 4,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  artistName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#ffffff",
+    letterSpacing: 0.3,
+  },
+
+  /* О бренде */
+  aboutSection: {},
+  videoBlock: {
+    marginHorizontal: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+    height: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  videoThumb: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+  },
+  playBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  aboutText: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  aboutTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  aboutBody: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  aboutQuote: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontStyle: "italic",
+    lineHeight: 24,
+    marginTop: 8,
+  },
+
+  /* Подписка */
+  subscribeSection: {
+    marginHorizontal: 12,
+    marginTop: 20,
+    borderRadius: 20,
     paddingHorizontal: 20,
+    paddingVertical: 28,
+    alignItems: "center",
+    gap: 8,
+  },
+  subscribeSubtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  subscribeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+  },
+  subscribeInput: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 14,
+  },
+  subscribeBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subscribeSuccess: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     paddingVertical: 8,
   },
-  retryText: { fontSize: 14 },
+  subscribeSuccessText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
 
   /* Drawer */
   backdrop: {
@@ -860,11 +945,6 @@ const styles = StyleSheet.create({
   drawerItemText: {
     fontSize: 15,
   },
-  drawerItemRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   drawerSubItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -887,70 +967,5 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     marginVertical: 8,
     marginHorizontal: 16,
-  },
-  sectionBlock: {
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  sectionLink: {
-    fontSize: 13,
-  },
-  newArrivalsRow: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  newArrivalCard: {
-    width: 148,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  newArrivalImg: {
-    width: 148,
-    height: 148,
-  },
-  newBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    backgroundColor: "#ffffff",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  newBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#000000",
-    letterSpacing: 1,
-  },
-  newArrivalInfo: {
-    padding: 8,
-  },
-  newArrivalName: {
-    fontSize: 12,
-    fontWeight: "500",
-    lineHeight: 16,
-    marginBottom: 4,
-  },
-  newArrivalPrice: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  allProductsHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
   },
 });
