@@ -1,23 +1,23 @@
-import { useVideoPlayer, VideoView } from "expo-video";
-import React from "react";
+import { ResizeMode, Video } from "expo-av";
+import React, { useRef } from "react";
 import { StyleSheet } from "react-native";
 
 const ABOUT_VIDEO_URL =
   "https://storage.yandexcloud.net/bmg/media/identity/cinematic_dark_urban_streetwear_video.mp4";
 
 export function AboutVideo() {
-  const player = useVideoPlayer(ABOUT_VIDEO_URL, (p) => {
-    p.loop = true;
-    p.muted = true;
-    p.play();
-  });
+  const videoRef = useRef(null);
 
   return (
-    <VideoView
-      player={player}
+    <Video
+      ref={videoRef}
+      source={{ uri: ABOUT_VIDEO_URL }}
       style={styles.video}
-      contentFit="cover"
-      nativeControls={false}
+      resizeMode={ResizeMode.COVER}
+      isLooping
+      isMuted
+      shouldPlay
+      useNativeControls={false}
     />
   );
 }

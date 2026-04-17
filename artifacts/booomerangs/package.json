@@ -60,8 +60,8 @@
     "@react-native-cookies/cookies": "^6.2.1",
     "@react-navigation/bottom-tabs": "^7.15.9",
     "axios": "^1.15.0",
+    "expo-av": "^16.0.8",
     "expo-clipboard": "~8.0.8",
-    "expo-secure-store": "^15.0.8",
-    "expo-video": "~3.0.16"
+    "expo-secure-store": "^15.0.8"
   }
 }
