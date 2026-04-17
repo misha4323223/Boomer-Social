@@ -569,6 +569,48 @@ export default function CatalogScreen() {
                 </View>
               );
             })}
+
+            {/* Прочее */}
+            <View style={[styles.drawerDivider, { borderTopColor: colors.border }]} />
+
+            <TouchableOpacity
+              style={[styles.drawerItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                closeDrawer();
+                router.push("/gift-cards" as any);
+              }}
+            >
+              <Feather name="gift" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+              <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
+                Подарочные сертификаты
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.drawerItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                closeDrawer();
+                router.push("/(tabs)/profile" as any);
+              }}
+            >
+              <Feather name="user" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+              <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
+                Профиль
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.drawerItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                closeDrawer();
+                router.push("/chat" as any);
+              }}
+            >
+              <Feather name="message-circle" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+              <Text style={[styles.drawerItemText, { color: colors.mutedForeground, fontWeight: "400" }]}>
+                Поддержка
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         </Animated.View>
       </Modal>
@@ -782,5 +824,10 @@ const styles = StyleSheet.create({
   drawerSubText: {
     flex: 1,
     fontSize: 14,
+  },
+  drawerDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginVertical: 8,
+    marginHorizontal: 16,
   },
 });

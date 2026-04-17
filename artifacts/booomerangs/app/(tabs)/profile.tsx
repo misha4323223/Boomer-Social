@@ -486,15 +486,6 @@ export default function ProfileScreen() {
 
           <Pressable
             style={[styles.menuItem, { backgroundColor: colors.card }]}
-            onPress={() => router.push("/(tabs)/favorites" as any)}
-          >
-            <Feather name="heart" size={20} color={colors.foreground} />
-            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Избранное</Text>
-            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.menuItem, { backgroundColor: colors.card }]}
             onPress={() => router.push("/chat" as any)}
           >
             <Feather name="message-circle" size={20} color={colors.foreground} />
