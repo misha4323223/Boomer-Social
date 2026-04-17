@@ -776,11 +776,16 @@ export default function ProfileScreen() {
         setAuthSuccess("Если email зарегистрирован, вы получите письмо для сброса пароля.");
       }
     } catch (e: any) {
-      const msg =
-        e?.response?.data?.error ??
-        e?.response?.data?.message ??
-        "Произошла ошибка. Попробуйте снова.";
-      setAuthError(msg);
+      const data = e?.response?.data;
+      if (data?.requiresVerification) {
+        setAuthError("Email не подтверждён. Проверьте почту и перейдите по ссылке из письма, затем войдите снова.");
+      } else {
+        const msg =
+          data?.error ??
+          data?.message ??
+          "Произошла ошибка. Попробуйте снова.";
+        setAuthError(msg);
+      }
     } finally {
       setSubmitting(false);
     }
