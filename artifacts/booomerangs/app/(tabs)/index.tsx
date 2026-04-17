@@ -207,9 +207,6 @@ export default function CatalogScreen() {
       <View style={styles.sectionBlock}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Новинки</Text>
-          <Pressable onPress={() => { setSelectedCategory(null); setSelectedSubcategory(null); setDebouncedSearch(""); setSearch(""); }}>
-            <Text style={[styles.sectionLink, { color: colors.mutedForeground }]}>Все товары →</Text>
-          </Pressable>
         </View>
         <ScrollView
           horizontal
