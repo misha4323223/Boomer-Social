@@ -551,24 +551,40 @@ export default function CheckoutScreen() {
 
         {/* Согласия */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Pressable style={styles.checkRow} onPress={() => setAgreeOffer(!agreeOffer)}>
-            <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: agreeOffer ? colors.foreground : "transparent" }]}>
+          <View style={styles.checkRow}>
+            <Pressable
+              onPress={() => setAgreeOffer(!agreeOffer)}
+              style={[styles.checkbox, { borderColor: colors.border, backgroundColor: agreeOffer ? colors.foreground : "transparent" }]}
+            >
               {agreeOffer && <Feather name="check" size={12} color={colors.background} />}
-            </View>
-            <Text style={[styles.checkText, { color: colors.mutedForeground }]}>
+            </Pressable>
+            <Text style={[styles.checkText, { color: colors.mutedForeground }]} onPress={() => setAgreeOffer(!agreeOffer)}>
               Я ознакомлен с{" "}
-              <Text style={{ color: colors.foreground, textDecorationLine: "underline" }}>Публичной офертой</Text>
+              <Text
+                style={{ color: colors.foreground, textDecorationLine: "underline" }}
+                onPress={() => router.push("/terms" as any)}
+              >
+                Публичной офертой
+              </Text>
             </Text>
-          </Pressable>
-          <Pressable style={styles.checkRow} onPress={() => setAgreePrivacy(!agreePrivacy)}>
-            <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: agreePrivacy ? colors.foreground : "transparent" }]}>
+          </View>
+          <View style={styles.checkRow}>
+            <Pressable
+              onPress={() => setAgreePrivacy(!agreePrivacy)}
+              style={[styles.checkbox, { borderColor: colors.border, backgroundColor: agreePrivacy ? colors.foreground : "transparent" }]}
+            >
               {agreePrivacy && <Feather name="check" size={12} color={colors.background} />}
-            </View>
-            <Text style={[styles.checkText, { color: colors.mutedForeground }]}>
+            </Pressable>
+            <Text style={[styles.checkText, { color: colors.mutedForeground }]} onPress={() => setAgreePrivacy(!agreePrivacy)}>
               Я согласен с{" "}
-              <Text style={{ color: colors.foreground, textDecorationLine: "underline" }}>Политикой персональных данных</Text>
+              <Text
+                style={{ color: colors.foreground, textDecorationLine: "underline" }}
+                onPress={() => router.push("/privacy" as any)}
+              >
+                Политикой персональных данных
+              </Text>
             </Text>
-          </Pressable>
+          </View>
         </View>
 
         {error && (

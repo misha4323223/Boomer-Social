@@ -113,6 +113,15 @@ export default function CatalogScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: newArrivals } = useQuery<Product[]>({
+    queryKey: ["new-arrivals"],
+    queryFn: async () => {
+      const res = await api.get("/products", { params: { isNew: true, limit: 10 } });
+      return (res.data?.products ?? []).filter((p: Product) => p.isNew);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const categories: Category[] = categoriesRaw ?? [];
 
   const handleCategorySelect = (key: string | null) => {
@@ -192,27 +201,79 @@ export default function CatalogScreen() {
   const heroHeight = useMemo(() => Math.round(width * (1920 / 1080)), [width]);
   const heroSource = useMemo(() => ({ uri: HERO_IMAGE }), []);
 
-  const renderHero = useCallback(() => (
-    <View style={[styles.hero, { width, height: heroHeight }]}>
-      <Image
-        source={heroSource}
-        style={[styles.heroImage, { width, height: heroHeight }]}
-        resizeMode="contain"
-        fadeDuration={0}
-      />
-      <View style={styles.heroOverlay} />
-      <Pressable
-        style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
-        onPress={handleGoToCollection}
-      >
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={styles.heroBtnContent}>
-          <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
-          <Feather name="arrow-right" size={13} color="#ffffff" />
+  const renderNewArrivals = useCallback(() => {
+    if (!newArrivals || newArrivals.length === 0) return null;
+    return (
+      <View style={styles.sectionBlock}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Новинки</Text>
+          <Pressable onPress={() => { setSelectedCategory(null); setSelectedSubcategory(null); setDebouncedSearch(""); setSearch(""); }}>
+            <Text style={[styles.sectionLink, { color: colors.mutedForeground }]}>Все товары →</Text>
+          </Pressable>
         </View>
-      </Pressable>
-    </View>
-  ), [width, heroHeight, heroSource, handleGoToCollection]);
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.newArrivalsRow}
+        >
+          {newArrivals.map((item) => (
+            <Pressable
+              key={item.id}
+              style={[styles.newArrivalCard, { backgroundColor: colors.card }]}
+              onPress={() => router.push(`/product/${item.id}` as any)}
+            >
+              <Image
+                source={{ uri: item.thumbnailUrl ?? item.imageUrl }}
+                style={styles.newArrivalImg}
+                resizeMode="cover"
+              />
+              {item.isNew && (
+                <View style={styles.newBadge}>
+                  <Text style={styles.newBadgeText}>NEW</Text>
+                </View>
+              )}
+              <View style={styles.newArrivalInfo}>
+                <Text style={[styles.newArrivalName, { color: colors.foreground }]} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.newArrivalPrice, { color: colors.foreground }]}>
+                  {(item.price / 100).toLocaleString("ru-RU")} ₽
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }, [newArrivals, colors, router]);
+
+  const renderHero = useCallback(() => (
+    <>
+      <View style={[styles.hero, { width, height: heroHeight }]}>
+        <Image
+          source={heroSource}
+          style={[styles.heroImage, { width, height: heroHeight }]}
+          resizeMode="contain"
+          fadeDuration={0}
+        />
+        <View style={styles.heroOverlay} />
+        <Pressable
+          style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
+          onPress={handleGoToCollection}
+        >
+          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.heroBtnContent}>
+            <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
+            <Feather name="arrow-right" size={13} color="#ffffff" />
+          </View>
+        </Pressable>
+      </View>
+      {renderNewArrivals()}
+      <View style={styles.allProductsHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Все товары</Text>
+      </View>
+    </>
+  ), [width, heroHeight, heroSource, handleGoToCollection, renderNewArrivals]);
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -829,5 +890,70 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     marginVertical: 8,
     marginHorizontal: 16,
+  },
+  sectionBlock: {
+    paddingTop: 24,
+    paddingBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  sectionLink: {
+    fontSize: 13,
+  },
+  newArrivalsRow: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  newArrivalCard: {
+    width: 148,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  newArrivalImg: {
+    width: 148,
+    height: 148,
+  },
+  newBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  newBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#000000",
+    letterSpacing: 1,
+  },
+  newArrivalInfo: {
+    padding: 8,
+  },
+  newArrivalName: {
+    fontSize: 12,
+    fontWeight: "500",
+    lineHeight: 16,
+    marginBottom: 4,
+  },
+  newArrivalPrice: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  allProductsHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
 });

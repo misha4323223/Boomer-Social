@@ -492,6 +492,24 @@ export default function ProfileScreen() {
             <Text style={[styles.menuLabel, { color: colors.foreground }]}>Написать нам</Text>
             <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
           </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
+            onPress={() => router.push("/privacy" as any)}
+          >
+            <Feather name="shield" size={20} color={colors.foreground} />
+            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Политика конфиденциальности</Text>
+            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
+            onPress={() => router.push("/terms" as any)}
+          >
+            <Feather name="file-text" size={20} color={colors.foreground} />
+            <Text style={[styles.menuLabel, { color: colors.foreground }]}>Пользовательское соглашение</Text>
+            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+          </Pressable>
         </View>
 
         <Pressable
