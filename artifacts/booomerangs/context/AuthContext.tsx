@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { proxyApi, clearSessionCookie, clearToken, storeToken } from "@/lib/api";
+import api, { clearSessionCookie, clearToken, storeToken } from "@/lib/api";
 import { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refetchUser = async () => {
     try {
-      const res = await proxyApi.get("/proxy/me");
+      const res = await api.get("/auth/me");
       setUser(res.data?.user ?? null);
     } catch {
       setUser(null);
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await proxyApi.post("/proxy/login", { email, password });
+    const res = await api.post("/auth/mobile-login", { email, password });
     const userData = res.data?.user ?? null;
     const token: string | undefined = res.data?.token;
     if (token) {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const res = await proxyApi.post("/proxy/register", { name, email, password });
+    const res = await api.post("/auth/mobile-register", { name, email, password });
     const userData = res.data?.user ?? null;
     const token: string | undefined = res.data?.token;
     if (token) {
@@ -68,12 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const forgotPassword = async (email: string) => {
-    await proxyApi.post("/proxy/forgot-password", { email });
+    await api.post("/auth/forgot-password", { email });
   };
 
   const logout = async () => {
     try {
-      await proxyApi.post("/proxy/logout");
+      await api.post("/auth/logout");
     } catch {}
     await clearSessionCookie();
     await clearToken();

@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CompactHeader } from "@/components/CompactHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
-import api, { proxyApi } from "@/lib/api";
+import api from "@/lib/api";
 import { formatPrice } from "@/lib/types";
 
 const LOYALTY_TIERS = [
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
   const { data: orders, isLoading: ordersLoading } = useQuery<any[]>({
     queryKey: ["orders"],
     queryFn: async () => {
-      const res = await proxyApi.get("/proxy/orders");
+      const res = await api.get("/auth/orders");
       return res.data?.orders ?? [];
     },
     enabled: !!user,
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
   const { data: giftCards, isLoading: giftLoading, isError: giftError } = useQuery<any[]>({
     queryKey: ["my-gift-cards"],
     queryFn: async () => {
-      const res = await proxyApi.get("/proxy/my-gift-cards");
+      const res = await api.get("/auth/my-gift-cards");
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!user,
@@ -107,7 +107,7 @@ export default function ProfileScreen() {
   const { data: promoCodes, isLoading: promoLoading, isError: promoError } = useQuery<any[]>({
     queryKey: ["my-promo-codes"],
     queryFn: async () => {
-      const res = await proxyApi.get("/proxy/my-promo-codes");
+      const res = await api.get("/auth/my-promo-codes");
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!user,
@@ -183,7 +183,7 @@ export default function ProfileScreen() {
     const handleSaveProfile = async () => {
       setSaving(true);
       try {
-        await proxyApi.patch("/proxy/profile", {
+        await api.patch("/auth/profile", {
           name: editName.trim() || undefined,
           phone: editPhone.trim() || undefined,
         });
@@ -211,7 +211,7 @@ export default function ProfileScreen() {
       }
       setChangingPassword(true);
       try {
-        await proxyApi.post("/proxy/change-password", { currentPassword, newPassword });
+        await api.post("/auth/change-password", { currentPassword, newPassword });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");

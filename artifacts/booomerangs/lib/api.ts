@@ -66,6 +66,15 @@ export async function clearToken(): Promise<void> {
   } catch {}
 }
 
+api.interceptors.request.use(async (config) => {
+  const token = await getStoredToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
+});
+
 proxyApi.interceptors.request.use(async (config) => {
   const token = await getStoredToken();
   if (token) {
