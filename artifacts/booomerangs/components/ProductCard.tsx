@@ -1,12 +1,20 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 
 import { useFavorites } from "@/context/FavoritesContext";
 import { useColors } from "@/hooks/useColors";
 import { Product, formatPrice } from "@/lib/types";
+
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
 
 interface Props {
   product: Product;
@@ -15,16 +23,41 @@ interface Props {
 export function ProductCard({ product }: Props) {
   const colors = useColors();
   const { isFavorite, toggle } = useFavorites();
-
   const fav = isFavorite(product.id);
 
+  const scale = useSharedValue(1);
+  const favScale = useSharedValue(1);
+
+  const cardAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const favAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: favScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+  };
+
+  const handleFavToggle = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    favScale.value = withSpring(1.4, { damping: 10, stiffness: 400 }, () => {
+      favScale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    });
+    toggle(product);
+  };
+
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: colors.card, opacity: pressed ? 0.92 : 1 },
-      ]}
+    <AnimatedPressable
+      style={[styles.card, { backgroundColor: colors.card }, cardAnimStyle]}
       onPress={() => router.push(`/product/${product.id}` as any)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
       <View style={styles.imageContainer}>
         <Image
@@ -44,17 +77,17 @@ export function ProductCard({ product }: Props) {
             <Text style={styles.newBadgeText}>SALE</Text>
           </View>
         )}
-        <Pressable
-          style={[styles.favBtn, { backgroundColor: colors.background }]}
-          onPress={() => toggle(product)}
-          hitSlop={8}
+        <Reanimated.View
+          style={[styles.favBtn, { backgroundColor: colors.background }, favAnimStyle]}
         >
-          <Feather
-            name="heart"
-            size={16}
-            color={fav ? "#ff3b30" : colors.mutedForeground}
-          />
-        </Pressable>
+          <Pressable onPress={handleFavToggle} hitSlop={8}>
+            <Feather
+              name="heart"
+              size={16}
+              color={fav ? "#ff3b30" : colors.mutedForeground}
+            />
+          </Pressable>
+        </Reanimated.View>
       </View>
 
       <View style={styles.info}>
@@ -93,7 +126,7 @@ export function ProductCard({ product }: Props) {
           <Text style={styles.outOfStock}>Нет в наличии</Text>
         )}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
