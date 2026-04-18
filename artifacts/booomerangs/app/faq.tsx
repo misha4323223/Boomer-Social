@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  backBtn: { width: 44, height: 44, alignItems: "flex-start", justifyContent: "center" },
+  backBtn: { width: 36, alignItems: "flex-start" },
   title: { fontSize: 17, fontWeight: "700" },
   subtitle: {
     fontSize: 14,
