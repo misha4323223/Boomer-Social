@@ -54,7 +54,7 @@ export default function WholesaleScreen() {
             Работаем с партнёрами
           </Text>
           <Text style={[styles.heroText, { color: colors.mutedForeground }]}>
-            Сотрудничаем с магазинами и шоурумами, которые ценят качественные вещи и авторский подход. Условия обсуждаем индивидуально.
+            Сотрудничаем с магазинами и шоурумами, которые ценят качественные вещи и авторский подход. Оптовые цены доступны в личном кабинете после регистрации.
           </Text>
         </View>
 
@@ -80,7 +80,7 @@ export default function WholesaleScreen() {
         <View style={[styles.cta, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.ctaTitle, { color: colors.foreground }]}>Хотите стать партнёром?</Text>
           <Text style={[styles.ctaText, { color: colors.mutedForeground }]}>
-            Зарегистрируйтесь в оптовом кабинете — мы свяжемся и обсудим условия.
+            Зарегистрируйтесь и получите доступ к оптовым ценам — всё открыто в личном кабинете.
           </Text>
           <Pressable
             style={styles.ctaMainBtn}
