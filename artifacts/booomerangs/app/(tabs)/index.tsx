@@ -23,6 +23,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
@@ -419,6 +420,10 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+
+        {/* ── ПОДВАЛ ── */}
+        <Footer />
+
       </ScrollView>
 
       {/* ── FILTER DRAWER ── */}
