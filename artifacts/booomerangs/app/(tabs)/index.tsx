@@ -23,7 +23,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AboutVideo } from "@/components/AboutVideo";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
@@ -364,34 +363,6 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </ScrollView>
-        </View>
-
-        {/* ── О БРЕНДЕ ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>О бренде</Text>
-          </View>
-
-          <View style={styles.videoBlock}>
-            <AboutVideo />
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.4)"]}
-              style={StyleSheet.absoluteFill}
-            />
-          </View>
-
-          <View style={styles.aboutText}>
-            <Text style={[styles.aboutTitle, { color: colors.foreground }]}>
-              Мы — BOOOMERANGS
-            </Text>
-            <Text style={[styles.aboutBody, { color: colors.mutedForeground }]}>
-              Базируясь в Туле — городе мастеров, пряников и самоваров — мы создаём вещи для
-              повседневной жизни. Более 200 моделей носков и собственная линейка одежды.
-            </Text>
-            <Text style={[styles.aboutQuote, { color: colors.foreground }]}>
-              «Делаем вещи,{"\n"}которые носим сами»
-            </Text>
-          </View>
         </View>
 
         {/* ── ПОДПИСКА НА EMAIL ── */}
