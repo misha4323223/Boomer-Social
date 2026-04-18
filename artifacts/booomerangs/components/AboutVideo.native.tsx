@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { StyleSheet } from "react-native";
 
 const ABOUT_VIDEO_URL =
-  "https://storage.yandexcloud.net/bmg/media/identity/cinematic_dark_urban_streetwear_video.mp4";
+  "https://storage.yandexcloud.net/bmg/site/video/1770825356904_document_5215639509227572296.mp4";
 
 export function AboutVideo() {
   const videoRef = useRef(null);
