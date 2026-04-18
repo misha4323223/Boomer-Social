@@ -13,7 +13,7 @@ export function AboutVideo() {
       <Video
         ref={videoRef}
         source={{ uri: ABOUT_VIDEO_URL }}
-        style={[StyleSheet.absoluteFill, { transform: [{ translateX: 25 }] }]}
+        style={[StyleSheet.absoluteFill, { transform: [{ translateX: 25 }, { translateY: -120 }] }]}
         resizeMode={ResizeMode.COVER}
         isLooping
         isMuted
