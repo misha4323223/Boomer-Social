@@ -313,13 +313,19 @@ export default function ArtistScreen() {
             <Text style={styles.sectionTitle}>
               {settings.productsTitle || "Коллекция"}
             </Text>
-            <View style={styles.productsGrid}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productsRow}
+              snapToInterval={cardWidth + 12}
+              decelerationRate="fast"
+            >
               {products.map((product) => (
                 <View key={product.id} style={{ width: cardWidth }}>
                   <ProductCard product={product} />
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         ) : null}
       </ScrollView>
@@ -478,9 +484,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  productsRow: {
     gap: 12,
+    paddingRight: 16,
   },
 });

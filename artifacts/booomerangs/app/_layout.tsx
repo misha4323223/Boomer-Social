@@ -61,6 +61,7 @@ function RootLayoutNav() {
       <Stack.Screen name="faq" options={{ headerShown: false }} />
       <Stack.Screen name="vacancies" options={{ headerShown: false }} />
       <Stack.Screen name="wholesale" options={{ headerShown: false }} />
+      <Stack.Screen name="artist/[slug]" options={{ headerShown: false }} />
     </Stack>
   );
 }
