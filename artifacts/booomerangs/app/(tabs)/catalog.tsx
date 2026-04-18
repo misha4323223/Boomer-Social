@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -55,11 +55,12 @@ export default function CatalogScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const router = useRouter();
+  const params = useLocalSearchParams<{ category?: string; subcategory?: string }>();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(params.category ?? null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(params.subcategory ?? null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);

@@ -310,9 +310,26 @@ export default function ArtistScreen() {
         {/* ── PRODUCTS ── */}
         {settings.productsVisible !== false && products.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {settings.productsTitle || "Коллекция"}
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {settings.productsTitle || "Коллекция"}
+              </Text>
+              <Pressable
+                style={styles.allProductsBtn}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/catalog" as any,
+                    params: {
+                      category: category,
+                      subcategory: subcategory,
+                    },
+                  })
+                }
+              >
+                <Text style={styles.allProductsBtnText}>Все товары</Text>
+                <Feather name="arrow-right" size={14} color="#ffffff" />
+              </Pressable>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -483,6 +500,27 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  allProductsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  allProductsBtnText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "500",
   },
   productsRow: {
     gap: 12,
