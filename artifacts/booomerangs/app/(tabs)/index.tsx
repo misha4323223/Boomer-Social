@@ -90,38 +90,66 @@ const MARQUEE_ITEMS = [
 
 function MarqueeBanner() {
   const translateX = useRef(new Animated.Value(0)).current;
-  const CONTENT_WIDTH = 1200;
+  const halfWidth = useRef(0);
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  useEffect(() => {
-    const anim = Animated.loop(
+  const startAnim = (width: number) => {
+    if (animRef.current) animRef.current.stop();
+    translateX.setValue(0);
+    animRef.current = Animated.loop(
       Animated.timing(translateX, {
-        toValue: -CONTENT_WIDTH / 2,
-        duration: 14000,
+        toValue: -width,
+        duration: Math.round(width * 22),
         useNativeDriver: true,
       })
     );
-    anim.start();
-    return () => anim.stop();
+    animRef.current.start();
+  };
+
+  const onHalfLayout = (e: any) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && w !== halfWidth.current) {
+      halfWidth.current = w;
+      startAnim(w);
+    }
+  };
+
+  useEffect(() => {
+    return () => { animRef.current?.stop(); };
   }, []);
 
   return (
     <View style={marqueeStyles.wrapper}>
       <View style={marqueeStyles.stripe}>
         <Animated.View style={[marqueeStyles.row, { transform: [{ translateX }] }]}>
-          {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={marqueeStyles.chunk}>
-              {MARQUEE_ITEMS.map((item, j) => (
-                <Text
-                  key={j}
-                  style={
-                    item === "✦" ? marqueeStyles.separator : marqueeStyles.label
-                  }
-                >
-                  {item}
-                </Text>
-              ))}
-            </View>
-          ))}
+          <View style={marqueeStyles.row} onLayout={onHalfLayout}>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={marqueeStyles.chunk}>
+                {MARQUEE_ITEMS.map((item, j) => (
+                  <Text
+                    key={j}
+                    style={item === "✦" ? marqueeStyles.separator : marqueeStyles.label}
+                  >
+                    {item}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+          <View style={marqueeStyles.row} aria-hidden>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={marqueeStyles.chunk}>
+                {MARQUEE_ITEMS.map((item, j) => (
+                  <Text
+                    key={j}
+                    style={item === "✦" ? marqueeStyles.separator : marqueeStyles.label}
+                  >
+                    {item}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
         </Animated.View>
       </View>
     </View>
