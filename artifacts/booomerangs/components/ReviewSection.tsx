@@ -105,6 +105,7 @@ export function ReviewSection({ productId }: { productId: number }) {
         productId,
         rating,
         comment: comment.trim() || null,
+        source: "mobile_app",
       });
     },
     onSuccess: () => {
