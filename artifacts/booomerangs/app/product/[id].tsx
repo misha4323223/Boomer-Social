@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -14,6 +15,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -52,6 +54,10 @@ export default function ProductScreen() {
   // Price drop modal (for guests)
   const [priceDropModal, setPriceDropModal] = useState(false);
   const [priceDropEmail, setPriceDropEmail] = useState("");
+
+  // Share / Hint
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [hintCopied, setHintCopied] = useState(false);
 
   // ─── Fetch product ────────────────────────────────────────────────────────
   const { data: product, isLoading, isError } = useQuery<Product>({
@@ -333,6 +339,33 @@ export default function ProductScreen() {
     else router.replace("/");
   };
 
+  const getProductUrl = (hint = false) => {
+    const slug = product?.slug || id;
+    const base = `https://booomerangs.ru/${slug}`;
+    return hint ? `${base}?hint=1` : base;
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    const url = getProductUrl();
+    try {
+      await Share.share({ message: `${product.name} — ${url}`, url });
+    } catch {
+      await Clipboard.setStringAsync(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
+
+  const handleHint = async () => {
+    if (!product) return;
+    const url = getProductUrl(true);
+    await Clipboard.setStringAsync(url);
+    setHintCopied(true);
+    setTimeout(() => setHintCopied(false), 2500);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ─── Header ─────────────────────────────────────────────────────── */}
@@ -350,9 +383,18 @@ export default function ProductScreen() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
           <Text style={[styles.headerBackText, { color: colors.foreground }]}>Назад</Text>
         </Pressable>
-        <Pressable onPress={() => toggle(product)} hitSlop={8} style={styles.headerFav}>
-          <Feather name="heart" size={22} color={fav ? "#ff3b30" : colors.mutedForeground} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable onPress={handleShare} hitSlop={8} style={styles.headerIconBtn}>
+            <Feather
+              name={linkCopied ? "check" : "share-2"}
+              size={20}
+              color={linkCopied ? "#22c55e" : colors.mutedForeground}
+            />
+          </Pressable>
+          <Pressable onPress={() => toggle(product)} hitSlop={8} style={styles.headerIconBtn}>
+            <Feather name="heart" size={20} color={fav ? "#ff3b30" : colors.mutedForeground} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -423,38 +465,69 @@ export default function ProductScreen() {
             ) : null}
           </View>
 
-          {/* ─── Price-drop subscription button ─────────────────────────── */}
-          <Pressable
-            onPress={handlePriceDropPress}
-            disabled={priceDropLoading}
-            style={[
-              styles.notifyPriceBtn,
-              {
-                backgroundColor: priceDropSubscribed ? "#22c55e15" : colors.card,
-                borderColor: priceDropSubscribed ? "#22c55e" : colors.border,
-              },
-            ]}
-          >
-            {priceDropLoading ? (
-              <ActivityIndicator size="small" color={colors.mutedForeground} />
-            ) : (
-              <Feather
-                name={priceDropSubscribed ? "check" : "bell"}
-                size={14}
-                color={priceDropSubscribed ? "#22c55e" : colors.mutedForeground}
-              />
-            )}
-            <Text
+          {/* ─── Action buttons row ──────────────────────────────────────── */}
+          <View style={styles.actionRow}>
+            {/* Price-drop subscription */}
+            <Pressable
+              onPress={handlePriceDropPress}
+              disabled={priceDropLoading}
               style={[
-                styles.notifyPriceBtnText,
-                { color: priceDropSubscribed ? "#22c55e" : colors.mutedForeground },
+                styles.actionBtn,
+                {
+                  backgroundColor: priceDropSubscribed ? "#22c55e15" : colors.card,
+                  borderColor: priceDropSubscribed ? "#22c55e" : colors.border,
+                  flex: 1,
+                },
               ]}
             >
-              {priceDropSubscribed
-                ? "Подписаны на снижение цены"
-                : "Уведомить о снижении цены"}
-            </Text>
-          </Pressable>
+              {priceDropLoading ? (
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+              ) : (
+                <Feather
+                  name={priceDropSubscribed ? "check" : "bell"}
+                  size={14}
+                  color={priceDropSubscribed ? "#22c55e" : colors.mutedForeground}
+                />
+              )}
+              <Text
+                style={[
+                  styles.actionBtnText,
+                  { color: priceDropSubscribed ? "#22c55e" : colors.mutedForeground },
+                ]}
+                numberOfLines={1}
+              >
+                {priceDropSubscribed ? "Подписаны" : "Следить за ценой"}
+              </Text>
+            </Pressable>
+
+            {/* Hint button */}
+            <Pressable
+              onPress={handleHint}
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor: hintCopied ? "#a855f715" : colors.card,
+                  borderColor: hintCopied ? "#a855f7" : colors.border,
+                  flex: 1,
+                },
+              ]}
+            >
+              <Feather
+                name={hintCopied ? "check" : "gift"}
+                size={14}
+                color={hintCopied ? "#a855f7" : colors.mutedForeground}
+              />
+              <Text
+                style={[
+                  styles.actionBtnText,
+                  { color: hintCopied ? "#a855f7" : colors.mutedForeground },
+                ]}
+                numberOfLines={1}
+              >
+                {hintCopied ? "Ссылка скопирована" : "Намекнуть"}
+              </Text>
+            </Pressable>
+          </View>
 
           {/* ─── Dolyame ────────────────────────────────────────────────── */}
           {product.price >= 300000 && (
@@ -895,7 +968,12 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   headerBackText: { fontSize: 16, fontWeight: "500" },
-  headerFav: { padding: 8 },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  headerIconBtn: { padding: 8 },
   center: {
     flex: 1,
     alignItems: "center",
@@ -937,17 +1015,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   badgeText: { fontSize: 12, fontWeight: "600" },
-  notifyPriceBtn: {
+  actionRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
     borderRadius: 8,
     borderWidth: 1,
-    alignSelf: "flex-start",
   },
-  notifyPriceBtnText: { fontSize: 13, fontWeight: "500" },
+  actionBtnText: { fontSize: 13, fontWeight: "500" },
   sku: { fontSize: 12 },
   dolyameBanner: {
     flexDirection: "row",
