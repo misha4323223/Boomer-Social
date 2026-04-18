@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Text as SvgText } from "react-native-svg";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
@@ -76,6 +76,93 @@ const ARTISTS = [
     slug: "artist-1772387909100",
   },
 ];
+
+const MARQUEE_ITEMS = [
+  "БЕСПЛАТНАЯ ДОСТАВКА ОТ 5 000 ₽",
+  "✦",
+  "БЕСПЛАТНАЯ ДОСТАВКА ОТ 5 000 ₽",
+  "✦",
+  "БЕСПЛАТНАЯ ДОСТАВКА ОТ 5 000 ₽",
+  "✦",
+  "БЕСПЛАТНАЯ ДОСТАВКА ОТ 5 000 ₽",
+  "✦",
+];
+
+function MarqueeBanner() {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const CONTENT_WIDTH = 1200;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: -CONTENT_WIDTH / 2,
+        duration: 14000,
+        useNativeDriver: true,
+      })
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+
+  return (
+    <View style={marqueeStyles.wrapper}>
+      <View style={marqueeStyles.stripe}>
+        <Animated.View style={[marqueeStyles.row, { transform: [{ translateX }] }]}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={marqueeStyles.chunk}>
+              {MARQUEE_ITEMS.map((item, j) => (
+                <Text
+                  key={j}
+                  style={
+                    item === "✦" ? marqueeStyles.separator : marqueeStyles.label
+                  }
+                >
+                  {item}
+                </Text>
+              ))}
+            </View>
+          ))}
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+const marqueeStyles = StyleSheet.create({
+  wrapper: {
+    overflow: "hidden",
+    backgroundColor: "#0a0a0a",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  stripe: {
+    paddingVertical: 11,
+    overflow: "hidden",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  chunk: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingRight: 14,
+  },
+  label: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 2.5,
+    textTransform: "uppercase",
+  },
+  separator: {
+    color: "#c8ff00",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+});
 
 function parseCategoriesResponse(data: any): Category[] {
   if (Array.isArray(data)) return data;
@@ -283,6 +370,9 @@ export default function HomeScreen() {
             </View>
           </Pressable>
         </View>
+
+        {/* ── БЕГУЩАЯ СТРОКА ── */}
+        <MarqueeBanner />
 
         {/* ── НОВИНКИ ── */}
         <View style={styles.section}>
