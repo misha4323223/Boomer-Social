@@ -30,6 +30,7 @@ import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
 import { colorToHex } from "@/lib/groupProducts";
 import { Product, formatPrice } from "@/lib/types";
+import { ReviewSection } from "@/components/ReviewSection";
 
 const { width } = Dimensions.get("window");
 
@@ -695,6 +696,9 @@ export default function ProductScreen() {
               </Text>
             </View>
           )}
+
+          {/* ─── Reviews ─────────────────────────────────────────────── */}
+          <ReviewSection productId={product.id} />
         </View>
       </ScrollView>
 
