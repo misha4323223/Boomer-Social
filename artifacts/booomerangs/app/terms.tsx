@@ -92,8 +92,8 @@ export default function TermsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: colors.border }]}>
+        <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Пользовательское соглашение</Text>
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
   },
-  backBtn: { padding: 6 },
-  headerTitle: { fontSize: 15, fontWeight: "600", flex: 1, textAlign: "center" },
+  backBtn: { width: 36, alignItems: "flex-start" },
+  headerTitle: { fontSize: 17, fontWeight: "700", flex: 1, textAlign: "center" },
   scroll: { flex: 1 },
   content: { padding: 20 },
   subtitle: { fontSize: 13, lineHeight: 20, marginBottom: 12 },

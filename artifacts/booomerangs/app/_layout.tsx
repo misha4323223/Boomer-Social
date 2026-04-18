@@ -55,6 +55,12 @@ function RootLayoutNav() {
       <Stack.Screen name="order-failed" options={{ headerShown: false }} />
       <Stack.Screen name="gift-cards" options={{ headerShown: false }} />
       <Stack.Screen name="gift-card-success" options={{ headerShown: false }} />
+      <Stack.Screen name="terms" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ headerShown: false }} />
+      <Stack.Screen name="about" options={{ headerShown: false }} />
+      <Stack.Screen name="faq" options={{ headerShown: false }} />
+      <Stack.Screen name="vacancies" options={{ headerShown: false }} />
+      <Stack.Screen name="wholesale" options={{ headerShown: false }} />
     </Stack>
   );
 }
