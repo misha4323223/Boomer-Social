@@ -262,6 +262,8 @@ export default function CheckoutScreen() {
                 source={{ uri: item.product?.thumbnailUrl ?? item.product?.imageUrl }}
                 style={styles.itemImg}
                 contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={150}
               />
               <View style={styles.itemMeta}>
                 <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>

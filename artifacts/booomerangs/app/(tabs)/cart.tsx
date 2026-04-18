@@ -77,6 +77,8 @@ export default function CartScreen() {
               source={{ uri: item.product?.thumbnailUrl || item.product?.imageUrl }}
               style={styles.itemImage}
               contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={150}
             />
             <View style={styles.itemInfo}>
               <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>

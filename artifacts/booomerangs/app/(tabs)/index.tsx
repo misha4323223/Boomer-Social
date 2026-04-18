@@ -5,11 +5,11 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Text as SvgText } from "react-native-svg";
 import React, { useRef, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
   Animated,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -265,8 +265,9 @@ export default function HomeScreen() {
           <Image
             source={{ uri: HERO_IMAGE }}
             style={{ position: "absolute", width, height: heroHeight }}
-            resizeMode="contain"
-            fadeDuration={0}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+            transition={0}
           />
           <View style={StyleSheet.absoluteFill as any}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.25)" }} />
@@ -350,7 +351,9 @@ export default function HomeScreen() {
                 <Image
                   source={{ uri: artist.image }}
                   style={styles.artistImage}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
                 />
                 <LinearGradient
                   colors={["transparent", "rgba(0,0,0,0.82)"]}

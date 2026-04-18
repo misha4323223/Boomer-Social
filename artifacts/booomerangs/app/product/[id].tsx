@@ -420,6 +420,8 @@ export default function ProductScreen() {
                   source={{ uri: item }}
                   style={{ width, height: width * 1.35, backgroundColor: "#1a1a1a" }}
                   contentFit="contain"
+                  cachePolicy="memory-disk"
+                  recyclingKey={item}
                 />
               )}
             />
@@ -443,6 +445,7 @@ export default function ProductScreen() {
             source={{ uri: allImages[0] }}
             style={[styles.productImage, { width, backgroundColor: "#1a1a1a" }]}
             contentFit="contain"
+            cachePolicy="memory-disk"
           />
         )}
 
@@ -589,6 +592,7 @@ export default function ProductScreen() {
                         source={{ uri: v.thumbnailUrl || v.imageUrl }}
                         style={styles.variantImg}
                         contentFit="cover"
+                        cachePolicy="memory-disk"
                         transition={150}
                       />
                       {v.color && (

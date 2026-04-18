@@ -1,11 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -284,7 +284,9 @@ function OrderCard({ order, onCancel, onRefreshTracking, onRefreshYandex, refres
                   <Image
                     source={{ uri: item.imageUrl }}
                     style={styles.itemImage}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={150}
                   />
                 ) : (
                   <View style={[styles.itemImagePlaceholder, { backgroundColor: colors.card }]}>

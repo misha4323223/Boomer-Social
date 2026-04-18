@@ -154,6 +154,7 @@ export default function ArtistScreen() {
                 source={{ uri: heroImage }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View style={[StyleSheet.absoluteFill, { backgroundColor: "#111111" }]} />
@@ -227,6 +228,8 @@ export default function ArtistScreen() {
                     source={{ uri }}
                     style={[styles.aboutImage, { width: width * 0.55 }]}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    recyclingKey={uri}
                   />
                 ))}
               </ScrollView>
@@ -270,6 +273,8 @@ export default function ArtistScreen() {
                   source={{ uri }}
                   style={[styles.galleryImage, { width: width * 0.7, height: width * 0.9 }]}
                   contentFit="cover"
+                  cachePolicy="memory-disk"
+                  recyclingKey={uri}
                 />
               ))}
             </ScrollView>
