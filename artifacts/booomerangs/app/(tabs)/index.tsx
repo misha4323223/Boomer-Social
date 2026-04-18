@@ -238,7 +238,23 @@ export default function HomeScreen() {
   const handleSearchChange = (text: string) => {
     setSearch(text);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {}, 400);
+    if (text.trim().length > 1) {
+      searchTimeout.current = setTimeout(() => {
+        setSearchVisible(false);
+        setSearch("");
+        router.push({ pathname: "/(tabs)/catalog", params: { search: text.trim() } } as any);
+      }, 600);
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    if (search.trim().length > 0) {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      const q = search.trim();
+      setSearchVisible(false);
+      setSearch("");
+      router.push({ pathname: "/(tabs)/catalog", params: { search: q } } as any);
+    }
   };
 
   const { data: categoriesRaw } = useQuery({
@@ -359,6 +375,7 @@ export default function HomeScreen() {
               placeholderTextColor={colors.mutedForeground}
               value={search}
               onChangeText={handleSearchChange}
+              onSubmitEditing={handleSearchSubmit}
               returnKeyType="search"
             />
             {search.length > 0 && (

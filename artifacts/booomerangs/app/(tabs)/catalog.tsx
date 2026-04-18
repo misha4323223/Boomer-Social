@@ -55,13 +55,13 @@ export default function CatalogScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const params = useLocalSearchParams<{ category?: string; subcategory?: string }>();
+  const params = useLocalSearchParams<{ category?: string; subcategory?: string; search?: string }>();
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(params.search ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(params.search ?? "");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(params.category ?? null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(params.subcategory ?? null);
-  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(!!(params.search));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
@@ -201,6 +201,10 @@ export default function CatalogScreen() {
               placeholderTextColor={colors.mutedForeground}
               value={search}
               onChangeText={handleSearchChange}
+              onSubmitEditing={() => {
+                if (searchTimeout.current) clearTimeout(searchTimeout.current);
+                setDebouncedSearch(search);
+              }}
               returnKeyType="search"
             />
             {search.length > 0 && (
