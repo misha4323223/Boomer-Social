@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
+import { CdekLogo, DolyamiBadge, TBankLogo, YookassaLogo } from "@/components/BrandLogos";
 import { getCdekPoint, setCdekPoint, subscribeCdekPoint, type CdekPoint } from "@/lib/cdekStore";
 import { formatPrice } from "@/lib/types";
 
@@ -317,7 +318,7 @@ export default function CheckoutScreen() {
         </View>
 
         {/* Способ доставки */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, { backgroundColor: colors.card, overflow: "visible" }]}>
           <View style={styles.sectionHeader}>
             <Feather name="truck" size={16} color={colors.mutedForeground} />
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Способ доставки</Text>
@@ -336,7 +337,8 @@ export default function CheckoutScreen() {
             onPress={() => setDeliveryType("pickup")}
           >
             <View style={[styles.radio, deliveryType === "pickup" && styles.radioActive]} />
-            <Text style={[styles.radioLabel, { color: colors.foreground }]}>СДЭК — пункт выдачи</Text>
+            <Text style={[styles.radioLabel, { flex: 1, color: colors.foreground }]}>Пункт выдачи</Text>
+            <CdekLogo />
           </Pressable>
 
           <Pressable
@@ -344,7 +346,8 @@ export default function CheckoutScreen() {
             onPress={() => setDeliveryType("door")}
           >
             <View style={[styles.radio, deliveryType === "door" && styles.radioActive]} />
-            <Text style={[styles.radioLabel, { color: colors.foreground }]}>СДЭК — доставка до двери</Text>
+            <Text style={[styles.radioLabel, { flex: 1, color: colors.foreground }]}>Доставка до двери</Text>
+            <CdekLogo />
           </Pressable>
 
           {/* Пункт выдачи — только для pickup */}
@@ -396,39 +399,53 @@ export default function CheckoutScreen() {
 
           {/* Поиск города — только для door */}
           {deliveryType === "door" && (
-            <View style={{ marginTop: 8 }}>
+            <View style={{ marginTop: 8, zIndex: 10 }}>
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Город доставки</Text>
-              <View style={[styles.searchRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <Feather name="search" size={14} color={colors.mutedForeground} />
-                <TextInput
-                  style={[styles.cityInput, { color: colors.foreground }]}
-                  placeholder="Начните вводить название города"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={selectedCity ? selectedCity.city : citySearch}
-                  onChangeText={handleCityInput}
-                  onFocus={() => { if (selectedCity) { setCitySearch(selectedCity.city); setSelectedCity(null); } }}
-                />
-                {citySearching && <ActivityIndicator size="small" color={colors.mutedForeground} />}
-              </View>
-              {cityResults.length > 0 && !selectedCity && (
-                <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  {cityResults.map((city, idx) => (
-                    <Pressable
-                      key={idx}
-                      style={[styles.dropdownItem, idx < cityResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                      onPress={() => { setSelectedCity(city); setCitySearch(""); setCityResults([]); }}
-                    >
-                      <Text style={[styles.dropdownText, { color: colors.foreground }]}>{city.city}</Text>
-                      {city.region && <Text style={[styles.dropdownSub, { color: colors.mutedForeground }]}>{city.region}</Text>}
-                    </Pressable>
-                  ))}
+              <View style={{ position: "relative" }}>
+                <View style={[styles.searchRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <Feather name="search" size={14} color={colors.mutedForeground} />
+                  <TextInput
+                    style={[styles.cityInput, { color: colors.foreground }]}
+                    placeholder="Начните вводить название города"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={selectedCity ? selectedCity.city : citySearch}
+                    onChangeText={handleCityInput}
+                    onFocus={() => { if (selectedCity) { setCitySearch(selectedCity.city); setSelectedCity(null); } }}
+                  />
+                  {citySearching && <ActivityIndicator size="small" color={colors.mutedForeground} />}
                 </View>
-              )}
+                {cityResults.length > 0 && !selectedCity && (
+                  <View style={[
+                    styles.dropdown,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      position: "absolute",
+                      top: 50,
+                      left: 0,
+                      right: 0,
+                      zIndex: 999,
+                      elevation: 8,
+                    },
+                  ]}>
+                    {cityResults.map((city, idx) => (
+                      <Pressable
+                        key={idx}
+                        style={[styles.dropdownItem, idx < cityResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                        onPress={() => { setSelectedCity(city); setCitySearch(""); setCityResults([]); }}
+                      >
+                        <Text style={[styles.dropdownText, { color: colors.foreground }]}>{city.city}</Text>
+                        {city.region && <Text style={[styles.dropdownSub, { color: colors.mutedForeground }]}>{city.region}</Text>}
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
             </View>
           )}
 
           {deliveryType === "door" && (
-            <View style={{ marginTop: 8 }}>
+            <View style={{ marginTop: 8, zIndex: 1 }}>
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Адрес доставки</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
@@ -452,10 +469,12 @@ export default function CheckoutScreen() {
               onPress={() => setPaymentMethod(method.id as "yookassa" | "tbank")}
             >
               <View style={[styles.radio, paymentMethod === method.id && styles.radioActive]} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.radioLabel, { color: colors.foreground }]}>{method.name}</Text>
+              <View style={{ flex: 1, gap: 4 }}>
                 <Text style={[styles.radioSub, { color: colors.mutedForeground }]}>{method.description}</Text>
+                {method.id === "tbank" && <DolyamiBadge />}
               </View>
+              {method.id === "yookassa" && <YookassaLogo />}
+              {method.id === "tbank" && <TBankLogo />}
             </Pressable>
           ))}
         </View>

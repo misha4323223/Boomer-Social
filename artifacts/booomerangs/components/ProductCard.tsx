@@ -29,11 +29,10 @@ export function ProductCard({ product }: Props) {
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: product.thumbnailUrl || product.imageUrl }}
-          style={styles.image}
+          style={[styles.image, { backgroundColor: "#1a1a1a" }]}
           contentFit="cover"
           cachePolicy="memory-disk"
           transition={200}
-          placeholder={{ color: "#1a1a1a" }}
         />
         {product.isNew && (
           <View style={styles.newBadge}>
