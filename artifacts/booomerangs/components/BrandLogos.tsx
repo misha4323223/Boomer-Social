@@ -1,115 +1,101 @@
+import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Svg, {
-  Circle,
-  Defs,
-  LinearGradient as SvgGradient,
-  Rect,
-  Stop,
-  Text as SvgText,
-} from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
 
-export function CdekLogo() {
+/* ─── CDEK ────────────────────────────────────────────────────── */
+export function CdekLogo({ height = 24 }: { height?: number }) {
   return (
-    <Svg width={56} height={24} viewBox="0 0 56 24">
-      <Rect width="56" height="24" rx="5" fill="#00B140" />
-      <SvgText
-        x="28"
-        y="17"
-        fontSize="13"
-        fontWeight="900"
-        fill="white"
-        textAnchor="middle"
-        letterSpacing="1"
-      >
-        СДЭК
-      </SvgText>
-    </Svg>
+    <Image
+      source={require("@/assets/cdek-logo.webp")}
+      style={{ height, width: height * 2.5, resizeMode: "contain" }}
+      contentFit="contain"
+    />
   );
 }
 
-export function YookassaLogo() {
+/* ─── YooKassa ────────────────────────────────────────────────── */
+export function YookassaLogo({ height = 24 }: { height?: number }) {
   return (
-    <Svg width={78} height={24} viewBox="0 0 78 24">
-      <Defs>
-        <SvgGradient id="ykGrad" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor="#6B24F5" />
-          <Stop offset="1" stopColor="#9B59FF" />
-        </SvgGradient>
-      </Defs>
-      <Rect width="78" height="24" rx="5" fill="url(#ykGrad)" />
-      <SvgText
-        x="39"
-        y="17"
-        fontSize="11"
-        fontWeight="800"
-        fill="white"
-        textAnchor="middle"
-        letterSpacing="0.3"
-      >
-        ЮKassa
-      </SvgText>
-    </Svg>
+    <Image
+      source={require("@/assets/yookassa-logo.webp")}
+      style={{ height, width: height * 4, resizeMode: "contain" }}
+      contentFit="contain"
+    />
   );
 }
 
+/* ─── T-Bank (Building2 Lucide icon, exact SVG paths from site) ─ */
 export function TBankLogo() {
+  const color = "#FFDD2D";
+  const size = 24;
   return (
-    <Svg width={28} height={28} viewBox="0 0 28 28">
-      <Circle cx="14" cy="14" r="14" fill="#FFDD2D" />
-      <SvgText
-        x="14"
-        y="20"
-        fontSize="16"
-        fontWeight="900"
-        fill="#111111"
-        textAnchor="middle"
-      >
-        Т
-      </SvgText>
-    </Svg>
+    <View style={styles.tbankRow}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+        <Path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+        <Path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+        <Path d="M10 6h4" />
+        <Path d="M10 10h4" />
+        <Path d="M10 14h4" />
+        <Path d="M10 18h4" />
+      </Svg>
+      <Text style={[styles.tbankText, { color }]}>T-Bank</Text>
+    </View>
   );
 }
 
-export function DolyamiBadge() {
+/* ─── Долями badge (exact logic from site source) ─────────────── */
+export function DolyamiBadge({ white = false }: { white?: boolean }) {
+  const color = white ? "#fff" : "#1C1C1C";
+  const heights = [0.45, 0.65, 0.82, 1.0];
+  const size = 16;
   return (
     <View style={styles.badge}>
-      <View style={styles.bars}>
-        {([0.45, 0.65, 0.82, 1.0] as const).map((h, i) => (
-          <View key={i} style={[styles.bar, { height: 8 * h }]} />
+      <Svg width={size * 1.1} height={size} viewBox="0 0 22 16" fill="none">
+        {heights.map((h, i) => (
+          <Rect
+            key={i}
+            x={i * 5.5}
+            y={16 * (1 - h)}
+            width={3.5}
+            height={16 * h}
+            rx={1}
+            fill={color}
+          />
         ))}
-      </View>
-      <Text style={styles.label}>ДОЛЯМИ</Text>
+      </Svg>
+      <Text style={[styles.badgeLabel, { color }]}>ДОЛЯМИ</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tbankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  tbankText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
   badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#FFDD2D",
+    borderColor: "#1C1C1C",
     borderRadius: 5,
     paddingHorizontal: 6,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  bars: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 1.5,
-  },
-  bar: {
-    width: 3,
-    borderRadius: 1.5,
-    backgroundColor: "#FFDD2D",
-  },
-  label: {
+  badgeLabel: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#FFDD2D",
     letterSpacing: 0.5,
   },
 });
