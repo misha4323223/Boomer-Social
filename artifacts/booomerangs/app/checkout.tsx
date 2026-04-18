@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -82,6 +83,7 @@ export default function CheckoutScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeliveryInfo, setShowDeliveryInfo] = useState(false);
 
   const { data: paymentMethodsData } = useQuery({
     queryKey: ["payment-methods"],
@@ -615,6 +617,17 @@ export default function CheckoutScreen() {
 
         <Pressable
           style={({ pressed }) => [
+            styles.infoBtn,
+            { borderColor: colors.border, backgroundColor: pressed ? colors.card : "transparent" },
+          ]}
+          onPress={() => setShowDeliveryInfo(true)}
+        >
+          <Feather name="info" size={16} color={colors.mutedForeground} />
+          <Text style={[styles.infoBtnText, { color: colors.foreground }]}>Информация о доставке</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
             styles.orderBtn,
             { backgroundColor: colors.foreground, opacity: pressed || submitting ? 0.8 : 1 },
           ]}
@@ -629,6 +642,66 @@ export default function CheckoutScreen() {
           }
         </Pressable>
       </ScrollView>
+
+      {/* Модалка: информация о доставке */}
+      <Modal
+        visible={showDeliveryInfo}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeliveryInfo(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowDeliveryInfo(false)}>
+          <Pressable
+            style={[styles.modalSheet, { backgroundColor: colors.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.foreground }]}>Информация о доставке</Text>
+              <Pressable onPress={() => setShowDeliveryInfo(false)} hitSlop={8}>
+                <Feather name="x" size={22} color={colors.mutedForeground} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
+              {[
+                {
+                  icon: "truck" as const,
+                  text: "Доставка по всей России через СДЭК и Яндекс Доставку. Выберите удобный способ при оформлении заказа.",
+                },
+                {
+                  icon: "clock" as const,
+                  text: "Сроки и стоимость доставки рассчитываются автоматически в зависимости от вашего региона.",
+                },
+                {
+                  icon: "package" as const,
+                  text: "Носки возврату и обмену не подлежат в соответствии с Постановлением Правительства РФ № 55.",
+                },
+                {
+                  icon: "shield" as const,
+                  text: "Возврат товара надлежащего качества осуществляется за счет покупателя. Возврат денежных средств за товар происходит только за изделие, доставка не входит в сумму возврата.",
+                },
+                {
+                  icon: "gift" as const,
+                  text: "При заказе от 5 000 ₽ доставка бесплатная.",
+                },
+                {
+                  icon: "map-pin" as const,
+                  text: "Статус доставки доступен в вашем личном кабинете. Нажмите на заказ, чтобы увидеть, где находится посылка, и обновить информацию.",
+                },
+              ].map((item, i) => (
+                <View key={i} style={styles.modalItem}>
+                  <View style={[styles.modalIconWrap, { backgroundColor: colors.background }]}>
+                    <Feather name={item.icon} size={18} color={colors.foreground} />
+                  </View>
+                  <Text style={[styles.modalItemText, { color: colors.foreground }]}>{item.text}</Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={{ height: insets.bottom + 8 }} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -679,8 +752,18 @@ const styles = StyleSheet.create({
   checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1.5, alignItems: "center", justifyContent: "center", marginTop: 1 },
   checkText: { flex: 1, fontSize: 13, lineHeight: 20 },
   errorText: { color: "#ff3b30", fontSize: 13, textAlign: "center" },
+  infoBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 50, borderRadius: 14, borderWidth: 1.5, marginTop: 4 },
+  infoBtnText: { fontSize: 15, fontWeight: "600" },
   orderBtn: { height: 56, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
   orderBtnText: { fontSize: 17, fontWeight: "700" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingHorizontal: 20, maxHeight: "85%" },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: "800" },
+  modalContent: { gap: 16, paddingBottom: 8 },
+  modalItem: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
+  modalIconWrap: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  modalItemText: { flex: 1, fontSize: 14, lineHeight: 21 },
   selectPointBtn: { flexDirection: "row", alignItems: "center", gap: 10, height: 54, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16 },
   selectPointText: { fontSize: 15, fontWeight: "600" },
   pointSelected: { borderRadius: 12, borderWidth: 2, padding: 12, gap: 6 },
