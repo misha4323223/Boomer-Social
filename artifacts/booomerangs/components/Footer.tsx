@@ -10,17 +10,17 @@ const SITE = "https://booomerangs.ru";
 
 const CATALOG_LINKS = [
   { label: "Все товары", href: "/(tabs)/catalog", internal: true },
-  { label: "Одежда", href: `${SITE}/catalog?category=odezhda`, internal: false },
-  { label: "Носки", href: `${SITE}/catalog?category=noski`, internal: false },
-  { label: "Аксессуары", href: `${SITE}/catalog?category=aksessuary`, internal: false },
+  { label: "Одежда", href: "/(tabs)/catalog", internal: true },
+  { label: "Носки", href: "/(tabs)/catalog", internal: true },
+  { label: "Аксессуары", href: "/(tabs)/catalog", internal: true },
 ];
 
 const INFO_LINKS = [
-  { label: "FAQ", href: `${SITE}/faq`, internal: false },
-  { label: "Вакансии", href: `${SITE}/vacancies`, internal: false },
-  { label: "Оптовым клиентам", href: `${SITE}/wholesale/register`, internal: false },
+  { label: "FAQ", href: "/faq", internal: true },
+  { label: "Вакансии", href: "/vacancies", internal: true },
+  { label: "Оптовым клиентам", href: "/wholesale", internal: true },
   { label: "Подарочные карты", href: "/gift-cards", internal: true },
-  { label: "О бренде", href: `${SITE}/about`, internal: false },
+  { label: "О бренде", href: "/about", internal: true },
 ];
 
 const LEGAL_LINKS = [
