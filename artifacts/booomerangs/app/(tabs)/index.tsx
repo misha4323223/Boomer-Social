@@ -3,7 +3,6 @@ import { BlurView } from "expo-blur";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Linking from "expo-linking";
 import Svg, { Text as SvgText } from "react-native-svg";
 import React, { useRef, useState } from "react";
 import {
@@ -344,9 +343,7 @@ export default function HomeScreen() {
                   styles.artistCard,
                   { opacity: pressed ? 0.85 : 1 },
                 ]}
-                onPress={() =>
-                  Linking.openURL(`https://booomerangs.ru/artist/${artist.slug}`)
-                }
+                onPress={() => router.push(`/artist/${artist.slug}` as any)}
               >
                 <Image
                   source={{ uri: artist.image }}
