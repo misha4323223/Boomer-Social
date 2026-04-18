@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   KeyboardAvoidingView,
@@ -44,22 +45,20 @@ export default function ProductScreen() {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
-  // Stock notify state
+  // Stock notify modal
   const [stockModal, setStockModal] = useState<{ size: string } | null>(null);
   const [stockEmail, setStockEmail] = useState("");
-  const [stockSubmitted, setStockSubmitted] = useState<Set<string>>(new Set());
 
-  // Price drop state
+  // Price drop modal (for guests)
   const [priceDropModal, setPriceDropModal] = useState(false);
   const [priceDropEmail, setPriceDropEmail] = useState("");
-  const [priceDropDone, setPriceDropDone] = useState(false);
 
+  // ─── Fetch product ────────────────────────────────────────────────────────
   const { data: product, isLoading, isError } = useQuery<Product>({
     queryKey: ["product", id],
     queryFn: async () => {
       const res = await api.get(`/products/${id}`);
       const detail: Product = res.data?.product ?? res.data;
-
       const cachedPages = queryClient.getQueriesData<{ products: Product[] }>({ queryKey: ["products"] });
       let cached: Product | undefined;
       for (const [, data] of cachedPages) {
@@ -70,7 +69,6 @@ export default function ProductScreen() {
         }
         if (cached) break;
       }
-
       if (cached) {
         return {
           ...detail,
@@ -95,51 +93,125 @@ export default function ProductScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if already subscribed to price drop
-  const { data: priceDropCheck } = useQuery<{ subscribed: boolean }>({
-    queryKey: ["price-drop-check", id, user?.email],
+  // ─── Check price-drop subscription for this product ───────────────────────
+  const { data: priceDropCheck, refetch: refetchPriceDrop } = useQuery<{ subscribed: boolean }>({
+    queryKey: ["price-drop-check", id, user?.email ?? ""],
     queryFn: async () => {
-      const res = await api.get(`/price-drop-notify/check?productId=${id}&email=${encodeURIComponent(user!.email!)}`);
+      const res = await api.get(
+        `/price-drop-notify/check?productId=${id}&email=${encodeURIComponent(user!.email!)}`
+      );
       return res.data;
     },
     enabled: !!id && !!user?.email,
   });
 
-  const priceDropSubscribed = priceDropDone || (priceDropCheck?.subscribed ?? false);
+  const priceDropSubscribed = priceDropCheck?.subscribed ?? false;
 
-  // Stock notify mutation
-  const stockMutation = useMutation({
-    mutationFn: async ({ productId, size, email }: { productId: number; size: string; email: string }) => {
-      await api.post("/stock-notify", { productId, productName: product?.name ?? "", size, email });
+  // ─── Fetch all stock subscriptions for current user (to know which sizes) ─
+  const { data: stockNotifyData, refetch: refetchStockNotify } = useQuery<{ subscriptions: any[] }>({
+    queryKey: ["stock-notify-my", user?.email ?? ""],
+    queryFn: async () => {
+      const res = await api.get(`/stock-notify/my?email=${encodeURIComponent(user!.email!)}`);
+      return res.data;
     },
-    onSuccess: (_, { size }) => {
-      setStockSubmitted(prev => new Set(prev).add(size));
+    enabled: !!user?.email,
+    staleTime: 0,
+  });
+
+  // Sizes that the user has already subscribed to for THIS product
+  const subscribedSizes = new Set<string>(
+    (stockNotifyData?.subscriptions ?? [])
+      .filter((s: any) => String(s.productId) === String(id))
+      .map((s: any) => s.size as string)
+  );
+
+  // ─── Mutations ────────────────────────────────────────────────────────────
+  const invalidateSubscriptions = (email: string) => {
+    queryClient.invalidateQueries({ queryKey: ["stock-notify-my", email] });
+    queryClient.invalidateQueries({ queryKey: ["price-drop-my", email] });
+    queryClient.invalidateQueries({ queryKey: ["price-drop-check", id, email] });
+  };
+
+  // Subscribe to stock
+  const stockSubscribeMutation = useMutation({
+    mutationFn: async ({ size, email }: { size: string; email: string }) => {
+      await api.post("/stock-notify", {
+        productId: Number(id),
+        productName: product?.name ?? "",
+        size,
+        email,
+      });
+    },
+    onSuccess: (_, { email }) => {
       setStockModal(null);
       setStockEmail("");
+      invalidateSubscriptions(email);
+      refetchStockNotify();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert("Ошибка", err?.response?.data?.error ?? "Не удалось оформить подписку");
     },
   });
 
-  // Price drop mutation
-  const priceDropMutation = useMutation({
-    mutationFn: async (email: string) => {
-      await api.post("/price-drop-notify", { productId: Number(id), productName: product?.name ?? "", email });
+  // Unsubscribe from stock
+  const stockUnsubscribeMutation = useMutation({
+    mutationFn: async ({ size, email }: { size: string; email: string }) => {
+      await api.delete("/stock-notify", { data: { productId: Number(id), size, email } });
     },
-    onSuccess: () => {
-      setPriceDropDone(true);
+    onSuccess: (_, { email }) => {
+      invalidateSubscriptions(email);
+      refetchStockNotify();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert("Ошибка", err?.response?.data?.error ?? "Не удалось отменить подписку");
+    },
+  });
+
+  // Subscribe to price drop
+  const priceDropSubscribeMutation = useMutation({
+    mutationFn: async (email: string) => {
+      await api.post("/price-drop-notify", {
+        productId: Number(id),
+        productName: product?.name ?? "",
+        email,
+      });
+    },
+    onSuccess: (_, email) => {
       setPriceDropModal(false);
       setPriceDropEmail("");
+      invalidateSubscriptions(email);
+      refetchPriceDrop();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert("Ошибка", err?.response?.data?.error ?? "Не удалось оформить подписку");
     },
   });
 
+  // Unsubscribe from price drop
+  const priceDropUnsubscribeMutation = useMutation({
+    mutationFn: async (email: string) => {
+      await api.delete("/price-drop-notify", { data: { productId: Number(id), email } });
+    },
+    onSuccess: (_, email) => {
+      invalidateSubscriptions(email);
+      refetchPriceDrop();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert("Ошибка", err?.response?.data?.error ?? "Не удалось отменить подписку");
+    },
+  });
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleAddToCart = async () => {
     if (!product) return;
     const sizes = product.noSize ? [] : (product.sizes ?? []);
     if (sizes.length > 0 && !selectedSize) return;
 
     setAdding(true);
-
     let sizeToSend: string | undefined = selectedSize ?? undefined;
     if (product.noSize) {
       if (product.sizes && product.sizes.length > 0) {
@@ -151,7 +223,6 @@ export default function ProductScreen() {
         if (sizeEntry) sizeToSend = sizeEntry[0];
       }
     }
-
     try {
       await addToCart(product.id, sizeToSend, product.color ?? undefined);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -165,26 +236,67 @@ export default function ProductScreen() {
     }
   };
 
-  const handleStockNotify = (size: string) => {
-    if (stockSubmitted.has(size)) return;
-    if (user?.email) {
-      stockMutation.mutate({ productId: product!.id, size, email: user.email });
+  const handleSizePress = (size: string, inStock: boolean) => {
+    if (inStock) {
+      setSelectedSize(selectedSize === size ? null : size);
+      return;
+    }
+    // Out of stock — toggle subscribe/unsubscribe
+    const email = user?.email;
+    const alreadySubscribed = subscribedSizes.has(size);
+
+    if (alreadySubscribed && email) {
+      Alert.alert(
+        "Отменить подписку",
+        `Отписаться от уведомления о поступлении размера ${size}?`,
+        [
+          { text: "Нет", style: "cancel" },
+          {
+            text: "Отписаться",
+            style: "destructive",
+            onPress: () => stockUnsubscribeMutation.mutate({ size, email }),
+          },
+        ]
+      );
+      return;
+    }
+
+    if (email) {
+      stockSubscribeMutation.mutate({ size, email });
     } else {
       setStockEmail("");
       setStockModal({ size });
     }
   };
 
-  const handlePriceDropNotify = () => {
-    if (priceDropSubscribed) return;
-    if (user?.email) {
-      priceDropMutation.mutate(user.email);
+  const handlePriceDropPress = () => {
+    const email = user?.email;
+
+    if (priceDropSubscribed && email) {
+      Alert.alert(
+        "Отменить подписку",
+        "Отписаться от уведомлений о снижении цены?",
+        [
+          { text: "Нет", style: "cancel" },
+          {
+            text: "Отписаться",
+            style: "destructive",
+            onPress: () => priceDropUnsubscribeMutation.mutate(email),
+          },
+        ]
+      );
+      return;
+    }
+
+    if (email) {
+      priceDropSubscribeMutation.mutate(email);
     } else {
       setPriceDropEmail("");
       setPriceDropModal(true);
     }
   };
 
+  // ─── Loading / Error states ────────────────────────────────────────────────
   if (isLoading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
@@ -196,13 +308,8 @@ export default function ProductScreen() {
   if (isError || !product) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
-          Товар не найден
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          style={[styles.backBtn, { borderColor: colors.border }]}
-        >
+        <Text style={[styles.errorText, { color: colors.mutedForeground }]}>Товар не найден</Text>
+        <Pressable onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.border }]}>
           <Text style={[styles.backBtnText, { color: colors.foreground }]}>Назад</Text>
         </Pressable>
       </View>
@@ -211,25 +318,30 @@ export default function ProductScreen() {
 
   const fav = isFavorite(product.id);
   const sizes = product.noSize ? [] : (product.sizes ?? []);
-  const allImages = product.images && product.images.length > 0
-    ? product.images
-    : [product.imageUrl].filter(Boolean);
-
+  const allImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [product.imageUrl].filter(Boolean);
   const needSize = sizes.length > 0 && !selectedSize;
   const allOutOfStock = product.inStock === false;
 
+  const priceDropLoading =
+    priceDropSubscribeMutation.isPending || priceDropUnsubscribeMutation.isPending;
+
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/");
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace("/");
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Шапка */}
-      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+      {/* ─── Header ─────────────────────────────────────────────────────── */}
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border },
+        ]}
+      >
         <Pressable
           onPress={handleBack}
           hitSlop={8}
@@ -243,8 +355,11 @@ export default function ProductScreen() {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
-        {/* Галерея */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}
+      >
+        {/* ─── Gallery ──────────────────────────────────────────────────── */}
         {allImages.length > 1 ? (
           <View>
             <FlatList
@@ -289,10 +404,10 @@ export default function ProductScreen() {
         )}
 
         <View style={styles.content}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
-          </View>
+          {/* ─── Title ──────────────────────────────────────────────────── */}
+          <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
 
+          {/* ─── Price + badge ───────────────────────────────────────────── */}
           <View style={styles.priceRow}>
             <Text style={[styles.productPrice, { color: colors.foreground }]}>
               {formatPrice(product.price)}
@@ -308,44 +423,59 @@ export default function ProductScreen() {
             ) : null}
           </View>
 
-          {/* Уведомление о снижении цены */}
-          {!allOutOfStock && (
-            <Pressable
-              onPress={handlePriceDropNotify}
-              disabled={priceDropSubscribed || priceDropMutation.isPending}
+          {/* ─── Price-drop subscription button ─────────────────────────── */}
+          <Pressable
+            onPress={handlePriceDropPress}
+            disabled={priceDropLoading}
+            style={[
+              styles.notifyPriceBtn,
+              {
+                backgroundColor: priceDropSubscribed ? "#22c55e15" : colors.card,
+                borderColor: priceDropSubscribed ? "#22c55e" : colors.border,
+              },
+            ]}
+          >
+            {priceDropLoading ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <Feather
+                name={priceDropSubscribed ? "check" : "bell"}
+                size={14}
+                color={priceDropSubscribed ? "#22c55e" : colors.mutedForeground}
+              />
+            )}
+            <Text
               style={[
-                styles.notifyPriceBtn,
-                {
-                  backgroundColor: priceDropSubscribed ? "#22c55e15" : colors.card,
-                  borderColor: priceDropSubscribed ? "#22c55e" : colors.border,
-                },
+                styles.notifyPriceBtnText,
+                { color: priceDropSubscribed ? "#22c55e" : colors.mutedForeground },
               ]}
             >
-              {priceDropMutation.isPending ? (
-                <ActivityIndicator size="small" color={colors.mutedForeground} />
-              ) : (
-                <Feather
-                  name={priceDropSubscribed ? "check" : "bell"}
-                  size={14}
-                  color={priceDropSubscribed ? "#22c55e" : colors.mutedForeground}
-                />
-              )}
-              <Text style={[styles.notifyPriceBtnText, { color: priceDropSubscribed ? "#22c55e" : colors.mutedForeground }]}>
-                {priceDropSubscribed ? "Подписаны на снижение цены" : "Уведомить о снижении цены"}
-              </Text>
-            </Pressable>
-          )}
+              {priceDropSubscribed
+                ? "Подписаны на снижение цены"
+                : "Уведомить о снижении цены"}
+            </Text>
+          </Pressable>
 
-          {/* Долями */}
+          {/* ─── Dolyame ────────────────────────────────────────────────── */}
           {product.price >= 300000 && (
-            <View style={[styles.dolyameBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View
+              style={[
+                styles.dolyameBanner,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
               <View style={styles.dolyameBars}>
                 {[0.45, 0.65, 0.82, 1.0].map((h, i) => (
-                  <View key={i} style={[styles.dolyameBar, { height: 14 * h, backgroundColor: colors.foreground }]} />
+                  <View
+                    key={i}
+                    style={[styles.dolyameBar, { height: 14 * h, backgroundColor: colors.foreground }]}
+                  />
                 ))}
               </View>
               <Text style={[styles.dolyameText, { color: colors.foreground }]}>
-                от {new Intl.NumberFormat("ru-RU").format(Math.round(product.price / 4 / 100))} ₽ × 4 платежа без процентов
+                от{" "}
+                {new Intl.NumberFormat("ru-RU").format(Math.round(product.price / 4 / 100))} ₽ × 4
+                платежа без процентов
               </Text>
             </View>
           )}
@@ -356,11 +486,15 @@ export default function ProductScreen() {
             </Text>
           )}
 
-          {/* Цветовые варианты */}
+          {/* ─── Color variants ──────────────────────────────────────────── */}
           {colorVariants.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Цвет</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.variantRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.variantRow}
+              >
                 {colorVariants.map((v) => {
                   const isActive = String(v.id) === String(product.id);
                   return (
@@ -371,7 +505,10 @@ export default function ProductScreen() {
                       }}
                       style={[
                         styles.variantThumb,
-                        { borderColor: isActive ? colors.foreground : colors.border, borderWidth: isActive ? 2 : 1 },
+                        {
+                          borderColor: isActive ? colors.foreground : colors.border,
+                          borderWidth: isActive ? 2 : 1,
+                        },
                       ]}
                     >
                       <Image
@@ -381,7 +518,9 @@ export default function ProductScreen() {
                         transition={150}
                       />
                       {v.color && (
-                        <View style={[styles.colorDot, { backgroundColor: colorToHex(v.color) }]} />
+                        <View
+                          style={[styles.colorDot, { backgroundColor: colorToHex(v.color) }]}
+                        />
                       )}
                     </Pressable>
                   );
@@ -390,7 +529,7 @@ export default function ProductScreen() {
             </View>
           )}
 
-          {/* Размеры */}
+          {/* ─── Sizes ───────────────────────────────────────────────────── */}
           {sizes.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -402,45 +541,52 @@ export default function ProductScreen() {
               <View style={styles.optionRow}>
                 {sizes.map((size) => {
                   const inStock = product.sizeStock ? (product.sizeStock[size] ?? 0) > 0 : true;
-                  const notified = stockSubmitted.has(size);
+                  const subscribed = subscribedSizes.has(size);
+                  const isLoading =
+                    (stockSubscribeMutation.isPending || stockUnsubscribeMutation.isPending) &&
+                    (stockModal?.size === size || (!stockModal && !inStock));
+
                   return (
                     <Pressable
                       key={size}
-                      onPress={() => {
-                        if (inStock) {
-                          setSelectedSize(selectedSize === size ? null : size);
-                        } else {
-                          handleStockNotify(size);
-                        }
-                      }}
+                      onPress={() => handleSizePress(size, inStock)}
                       style={[
                         styles.optionChip,
                         {
-                          backgroundColor: selectedSize === size ? colors.foreground : colors.card,
-                          borderColor: needSize && !selectedSize
-                            ? "#ff3b30"
-                            : selectedSize === size
+                          backgroundColor:
+                            selectedSize === size ? colors.foreground : colors.card,
+                          borderColor:
+                            needSize && !selectedSize
+                              ? "#ff3b30"
+                              : selectedSize === size
                               ? colors.foreground
-                              : notified
-                                ? "#22c55e"
-                                : colors.border,
-                          opacity: inStock ? 1 : 0.55,
+                              : subscribed
+                              ? "#22c55e"
+                              : colors.border,
+                          opacity: inStock ? 1 : 0.6,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.optionText,
-                          { color: selectedSize === size ? colors.background : notified ? "#22c55e" : colors.foreground },
+                          {
+                            color:
+                              selectedSize === size
+                                ? colors.background
+                                : subscribed
+                                ? "#22c55e"
+                                : colors.foreground,
+                          },
                         ]}
                       >
                         {size}
                       </Text>
                       {!inStock && (
                         <Feather
-                          name={notified ? "check" : "bell"}
+                          name={subscribed ? "check" : "bell"}
                           size={10}
-                          color={notified ? "#22c55e" : colors.mutedForeground}
+                          color={subscribed ? "#22c55e" : colors.mutedForeground}
                           style={styles.sizeNotifyIcon}
                         />
                       )}
@@ -448,15 +594,17 @@ export default function ProductScreen() {
                   );
                 })}
               </View>
-              {/* Подсказка для недоступных размеров */}
-              {sizes.some(s => product.sizeStock ? (product.sizeStock[s] ?? 0) === 0 : false) && (
+              {sizes.some((s) =>
+                product.sizeStock ? (product.sizeStock[s] ?? 0) === 0 : false
+              ) && (
                 <Text style={[styles.sizeHint, { color: colors.mutedForeground }]}>
-                  Нажмите на недоступный размер, чтобы подписаться на уведомление
+                  Нажмите на недоступный размер — подпишитесь или отпишитесь от уведомления
                 </Text>
               )}
             </View>
           )}
 
+          {/* ─── Description / Composition ──────────────────────────────── */}
           {product.description && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Описание</Text>
@@ -477,7 +625,7 @@ export default function ProductScreen() {
         </View>
       </ScrollView>
 
-      {/* Кнопка добавить в корзину */}
+      {/* ─── Add to cart footer ───────────────────────────────────────────── */}
       <View
         style={[
           styles.footer,
@@ -492,7 +640,13 @@ export default function ProductScreen() {
           style={({ pressed }) => [
             styles.addBtn,
             {
-              backgroundColor: added ? "#22c55e" : needSize ? colors.card : allOutOfStock ? colors.card : colors.foreground,
+              backgroundColor: added
+                ? "#22c55e"
+                : needSize
+                ? colors.card
+                : allOutOfStock
+                ? colors.card
+                : colors.foreground,
               opacity: pressed || adding ? 0.8 : 1,
               borderWidth: needSize || allOutOfStock ? 1 : 0,
               borderColor: allOutOfStock ? colors.border : "#ff3b30",
@@ -507,22 +661,30 @@ export default function ProductScreen() {
             <Text
               style={[
                 styles.addBtnText,
-                { color: added ? "#fff" : needSize ? "#ff3b30" : allOutOfStock ? colors.mutedForeground : colors.background },
+                {
+                  color: added
+                    ? "#fff"
+                    : needSize
+                    ? "#ff3b30"
+                    : allOutOfStock
+                    ? colors.mutedForeground
+                    : colors.background,
+                },
               ]}
             >
               {allOutOfStock
                 ? "Нет в наличии"
                 : added
-                  ? "Добавлено!"
-                  : needSize
-                    ? "Выберите размер"
-                    : "В корзину"}
+                ? "Добавлено!"
+                : needSize
+                ? "Выберите размер"
+                : "В корзину"}
             </Text>
           )}
         </Pressable>
       </View>
 
-      {/* Модал: уведомление о наличии размера */}
+      {/* ─── Modal: stock notify (guest) ─────────────────────────────────── */}
       <Modal
         visible={!!stockModal}
         transparent
@@ -534,9 +696,18 @@ export default function ProductScreen() {
           style={styles.modalOverlay}
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setStockModal(null)} />
-          <View style={[styles.modalSheet, { backgroundColor: colors.background, borderColor: colors.border, paddingBottom: insets.bottom + 20 }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                paddingBottom: insets.bottom + 20,
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
-            <View style={[styles.modalIconRow]}>
+            <View style={styles.modalIconRow}>
               <View style={[styles.modalIconBg, { backgroundColor: colors.card }]}>
                 <Feather name="bell" size={22} color={colors.foreground} />
               </View>
@@ -545,10 +716,21 @@ export default function ProductScreen() {
               Уведомить о наличии
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.mutedForeground }]}>
-              Размер <Text style={{ fontWeight: "700", color: colors.foreground }}>{stockModal?.size}</Text> сейчас недоступен.{"\n"}Введите email и мы напишем, как только он появится.
+              Размер{" "}
+              <Text style={{ fontWeight: "700", color: colors.foreground }}>
+                {stockModal?.size}
+              </Text>{" "}
+              сейчас недоступен.{"\n"}Укажите email — напишем, как только появится.
             </Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
+              style={[
+                styles.modalInput,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.foreground,
+                },
+              ]}
               placeholder="your@email.com"
               placeholderTextColor={colors.mutedForeground}
               keyboardType="email-address"
@@ -559,30 +741,46 @@ export default function ProductScreen() {
             <Pressable
               style={[
                 styles.modalBtn,
-                { backgroundColor: stockEmail.includes("@") ? colors.foreground : colors.card },
+                {
+                  backgroundColor: stockEmail.includes("@") ? colors.foreground : colors.card,
+                },
               ]}
               onPress={() => {
                 if (!stockModal || !stockEmail.includes("@")) return;
-                stockMutation.mutate({ productId: product!.id, size: stockModal.size, email: stockEmail.trim() });
+                stockSubscribeMutation.mutate({
+                  size: stockModal.size,
+                  email: stockEmail.trim(),
+                });
               }}
-              disabled={!stockEmail.includes("@") || stockMutation.isPending}
+              disabled={!stockEmail.includes("@") || stockSubscribeMutation.isPending}
             >
-              {stockMutation.isPending ? (
+              {stockSubscribeMutation.isPending ? (
                 <ActivityIndicator color={colors.background} />
               ) : (
-                <Text style={[styles.modalBtnText, { color: stockEmail.includes("@") ? colors.background : colors.mutedForeground }]}>
+                <Text
+                  style={[
+                    styles.modalBtnText,
+                    {
+                      color: stockEmail.includes("@")
+                        ? colors.background
+                        : colors.mutedForeground,
+                    },
+                  ]}
+                >
                   Подписаться
                 </Text>
               )}
             </Pressable>
             <Pressable onPress={() => setStockModal(null)} style={styles.modalCancel}>
-              <Text style={[styles.modalCancelText, { color: colors.mutedForeground }]}>Отмена</Text>
+              <Text style={[styles.modalCancelText, { color: colors.mutedForeground }]}>
+                Отмена
+              </Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Модал: уведомление о снижении цены */}
+      {/* ─── Modal: price drop notify (guest) ───────────────────────────── */}
       <Modal
         visible={priceDropModal}
         transparent
@@ -594,7 +792,16 @@ export default function ProductScreen() {
           style={styles.modalOverlay}
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setPriceDropModal(false)} />
-          <View style={[styles.modalSheet, { backgroundColor: colors.background, borderColor: colors.border, paddingBottom: insets.bottom + 20 }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                paddingBottom: insets.bottom + 20,
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
             <View style={styles.modalIconRow}>
               <View style={[styles.modalIconBg, { backgroundColor: colors.card }]}>
@@ -605,10 +812,21 @@ export default function ProductScreen() {
               Следить за ценой
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.mutedForeground }]}>
-              Введите email — сообщим, если цена на{"\n"}<Text style={{ fontWeight: "700", color: colors.foreground }}>{product.name}</Text>{"\n"}снизится.
+              Укажите email — сообщим, если цена на{"\n"}
+              <Text style={{ fontWeight: "700", color: colors.foreground }}>
+                {product.name}
+              </Text>
+              {"\n"}снизится.
             </Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
+              style={[
+                styles.modalInput,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.foreground,
+                },
+              ]}
               placeholder="your@email.com"
               placeholderTextColor={colors.mutedForeground}
               keyboardType="email-address"
@@ -619,24 +837,37 @@ export default function ProductScreen() {
             <Pressable
               style={[
                 styles.modalBtn,
-                { backgroundColor: priceDropEmail.includes("@") ? colors.foreground : colors.card },
+                {
+                  backgroundColor: priceDropEmail.includes("@") ? colors.foreground : colors.card,
+                },
               ]}
               onPress={() => {
                 if (!priceDropEmail.includes("@")) return;
-                priceDropMutation.mutate(priceDropEmail.trim());
+                priceDropSubscribeMutation.mutate(priceDropEmail.trim());
               }}
-              disabled={!priceDropEmail.includes("@") || priceDropMutation.isPending}
+              disabled={!priceDropEmail.includes("@") || priceDropSubscribeMutation.isPending}
             >
-              {priceDropMutation.isPending ? (
+              {priceDropSubscribeMutation.isPending ? (
                 <ActivityIndicator color={colors.background} />
               ) : (
-                <Text style={[styles.modalBtnText, { color: priceDropEmail.includes("@") ? colors.background : colors.mutedForeground }]}>
+                <Text
+                  style={[
+                    styles.modalBtnText,
+                    {
+                      color: priceDropEmail.includes("@")
+                        ? colors.background
+                        : colors.mutedForeground,
+                    },
+                  ]}
+                >
                   Подписаться
                 </Text>
               )}
             </Pressable>
             <Pressable onPress={() => setPriceDropModal(false)} style={styles.modalCancel}>
-              <Text style={[styles.modalCancelText, { color: colors.mutedForeground }]}>Отмена</Text>
+              <Text style={[styles.modalCancelText, { color: colors.mutedForeground }]}>
+                Отмена
+              </Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
@@ -645,6 +876,7 @@ export default function ProductScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -688,14 +920,7 @@ const styles = StyleSheet.create({
   },
   dot: { height: 6, borderRadius: 3 },
   content: { padding: 20, gap: 12 },
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-  },
   productName: {
-    flex: 1,
     fontSize: 20,
     fontWeight: "700",
     lineHeight: 28,
@@ -797,7 +1022,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addBtnText: { fontSize: 16, fontWeight: "700" },
-  // Modals
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
