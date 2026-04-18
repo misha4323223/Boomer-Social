@@ -448,12 +448,13 @@ export default function CheckoutScreen() {
             <View style={{ marginTop: 8, zIndex: 1 }}>
               <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Адрес доставки</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                style={[styles.input, styles.inputMultiline, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
                 placeholder="Улица, дом, квартира"
                 placeholderTextColor={colors.mutedForeground}
                 value={doorAddress}
                 onChangeText={setDoorAddress}
                 multiline
+                textAlignVertical="top"
               />
             </View>
           )}
@@ -650,6 +651,7 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   inputFlex: { flex: 1 },
   input: { height: 48, borderRadius: 10, paddingHorizontal: 12, fontSize: 14, borderWidth: 1 },
+  inputMultiline: { height: 88, paddingTop: 12, paddingBottom: 12 },
   applyBtn: { height: 48, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   applyBtnText: { fontSize: 14, fontWeight: "600" },
   freeBadge: { borderWidth: 2, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, alignItems: "center" },
