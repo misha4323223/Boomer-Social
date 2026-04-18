@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  backBtn: { width: 36, alignItems: "flex-start" },
+  backBtn: { width: 44, height: 44, alignItems: "flex-start", justifyContent: "center" },
   title: { fontSize: 17, fontWeight: "700" },
   hero: { padding: 20, paddingBottom: 4 },
   heroTitle: { fontSize: 24, fontWeight: "800", lineHeight: 32, marginBottom: 10 },
