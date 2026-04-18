@@ -14,7 +14,7 @@ export function AboutVideo() {
         ref={videoRef}
         source={{ uri: ABOUT_VIDEO_URL }}
         style={StyleSheet.absoluteFill}
-        resizeMode={ResizeMode.CONTAIN}
+        resizeMode={ResizeMode.COVER}
         isLooping
         isMuted
         shouldPlay
