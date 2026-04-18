@@ -51,7 +51,7 @@ export function DolyamiBadge({ white = false }: { white?: boolean }) {
   const heights = [0.45, 0.65, 0.82, 1.0];
   const size = 16;
   return (
-    <View style={styles.badge}>
+    <View style={[styles.badge, { borderColor: color }]}>
       <Svg width={size * 1.1} height={size} viewBox="0 0 22 16" fill="none">
         {heights.map((h, i) => (
           <Rect

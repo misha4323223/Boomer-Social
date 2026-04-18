@@ -474,7 +474,7 @@ export default function CheckoutScreen() {
               <View style={[styles.radio, paymentMethod === method.id && styles.radioActive]} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={[styles.radioSub, { color: colors.mutedForeground }]}>{method.description}</Text>
-                {method.id === "tbank" && <DolyamiBadge />}
+                {method.id === "tbank" && <DolyamiBadge white />}
               </View>
               {method.id === "yookassa" && <YookassaLogo />}
               {method.id === "tbank" && <TBankLogo />}
