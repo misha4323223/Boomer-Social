@@ -147,6 +147,8 @@ export default function HomeScreen() {
 
   const categories: Category[] = categoriesRaw ?? [];
   const cardWidth = Math.floor((width - 12 * 3) / 2);
+  const artistCardWidth = Math.min(Math.floor(width * 0.48), 200);
+  const artistCardHeight = Math.round(artistCardWidth * 1.4);
 
   const handleSubscribe = async () => {
     if (!email.trim()) return;
@@ -341,7 +343,7 @@ export default function HomeScreen() {
                 key={artist.slug}
                 style={({ pressed }) => [
                   styles.artistCard,
-                  { opacity: pressed ? 0.85 : 1 },
+                  { opacity: pressed ? 0.85 : 1, width: artistCardWidth, height: artistCardHeight },
                 ]}
                 onPress={() => router.push(`/artist/${artist.slug}` as any)}
               >

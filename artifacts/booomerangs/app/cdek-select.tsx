@@ -5,6 +5,8 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -106,6 +108,11 @@ export default function CdekSelectScreen() {
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
+    >
     <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
 
       {/* Поиск города */}
@@ -257,6 +264,7 @@ export default function CdekSelectScreen() {
         </>
       )}
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

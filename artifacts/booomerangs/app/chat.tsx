@@ -182,7 +182,8 @@ export default function ChatScreen() {
     return (
       <KeyboardAvoidingView
         style={[styles.center, { backgroundColor: "#000000", paddingHorizontal: 32 }]}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
       >
         <View style={styles.welcomeIcon}>
           <Feather name="message-circle" size={56} color="#ffffff" />
@@ -216,11 +217,13 @@ export default function ChatScreen() {
     );
   }
 
+  const keyboardOffset = Platform.OS === "ios" ? insets.top + 44 : 0;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: "#000000" }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      behavior="padding"
+      keyboardVerticalOffset={keyboardOffset}
     >
       <View style={[styles.chatHeader, { paddingTop: 12 }]}>
         <View style={styles.chatHeaderLeft}>
@@ -248,6 +251,8 @@ export default function ChatScreen() {
             flatListRef.current?.scrollToEnd({ animated: true })
           }
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           renderItem={({ item }) => (
             <View
               style={[
