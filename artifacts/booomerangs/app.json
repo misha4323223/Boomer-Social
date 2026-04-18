@@ -19,6 +19,7 @@
     },
     "android": {
       "package": "ru.booomerangs.app",
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#000000"
       }
