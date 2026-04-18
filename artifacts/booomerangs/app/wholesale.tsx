@@ -13,19 +13,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 
-const BENEFITS = [
-  { icon: "percent" as const, title: "Оптовые цены", text: "Специальные условия при заказе от 10 единиц товара" },
-  { icon: "truck" as const, title: "Быстрая доставка", text: "Приоритетная обработка и отгрузка оптовых заказов" },
-  { icon: "headphones" as const, title: "Персональный менеджер", text: "Выделенный менеджер для сопровождения вашего заказа" },
-  { icon: "refresh-cw" as const, title: "Гибкий возврат", text: "Упрощённые условия возврата для оптовых партнёров" },
-];
-
-const CONDITIONS = [
-  "Минимальный заказ — от 10 единиц одного артикула",
-  "Скидка от 15% при заказе от 50 единиц",
-  "Индивидуальные условия для крупных партнёров",
-  "Возможна брендирование и упаковка под заказ",
-  "Оплата по счёту для юридических лиц",
+const FEATURES = [
+  {
+    icon: "box" as const,
+    title: "Оригинальный продукт",
+    text: "Уникальные дизайны, которых нет у других — наши вещи выделяются на полке.",
+  },
+  {
+    icon: "users" as const,
+    title: "Живая аудитория",
+    text: "Бренд с активным сообществом в соцсетях и лояльными покупателями.",
+  },
+  {
+    icon: "map-pin" as const,
+    title: "Российское производство",
+    text: "Делаем в России. Стабильные сроки и контроль качества на каждом этапе.",
+  },
 ];
 
 export default function WholesaleScreen() {
@@ -42,55 +45,68 @@ export default function WholesaleScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+      >
         <View style={styles.hero}>
           <Text style={[styles.heroTitle, { color: colors.foreground }]}>
-            Станьте партнёром{"\n"}BOOOMERANGS
+            Работаем с партнёрами
           </Text>
           <Text style={[styles.heroText, { color: colors.mutedForeground }]}>
-            Предлагаем выгодные условия сотрудничества для магазинов, маркетплейсов и других партнёров.
+            Сотрудничаем с магазинами и шоурумами, которым близка уличная культура и качественные вещи. Условия обсуждаем индивидуально.
           </Text>
         </View>
 
-        {/* Преимущества */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Преимущества</Text>
-        <View style={styles.benefits}>
-          {BENEFITS.map((b) => (
-            <View key={b.title} style={[styles.benefitCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.benefitIcon, { backgroundColor: colors.background }]}>
-                <Feather name={b.icon} size={20} color={colors.foreground} />
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Почему BOOOMERANGS</Text>
+
+        <View style={styles.features}>
+          {FEATURES.map((f) => (
+            <View
+              key={f.title}
+              style={[styles.featureCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={[styles.featureIconWrap, { backgroundColor: colors.background }]}>
+                <Feather name={f.icon} size={20} color={colors.foreground} />
               </View>
-              <Text style={[styles.benefitTitle, { color: colors.foreground }]}>{b.title}</Text>
-              <Text style={[styles.benefitText, { color: colors.mutedForeground }]}>{b.text}</Text>
+              <View style={styles.featureTextWrap}>
+                <Text style={[styles.featureTitle, { color: colors.foreground }]}>{f.title}</Text>
+                <Text style={[styles.featureText, { color: colors.mutedForeground }]}>{f.text}</Text>
+              </View>
             </View>
           ))}
         </View>
 
-        {/* Условия */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Условия сотрудничества</Text>
-        <View style={[styles.condCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {CONDITIONS.map((c) => (
-            <View key={c} style={styles.condRow}>
-              <Feather name="check-circle" size={16} color="#4ade80" />
-              <Text style={[styles.condText, { color: colors.foreground }]}>{c}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* CTA */}
         <View style={[styles.cta, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.ctaTitle, { color: colors.foreground }]}>Готовы начать?</Text>
+          <Text style={[styles.ctaTitle, { color: colors.foreground }]}>Хотите стать партнёром?</Text>
           <Text style={[styles.ctaText, { color: colors.mutedForeground }]}>
-            Свяжитесь с нами для получения прайс-листа и условий сотрудничества
+            Зарегистрируйтесь в оптовом кабинете — мы свяжемся и обсудим условия.
           </Text>
           <Pressable
-            style={styles.ctaBtn}
+            style={styles.ctaMainBtn}
+            onPress={() => Linking.openURL("https://booomerangs.ru/wholesale/register")}
+          >
+            <Text style={styles.ctaMainBtnText}>Оптовый вход / Регистрация</Text>
+          </Pressable>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <Text style={[styles.orText, { color: colors.mutedForeground }]}>или напишите нам напрямую</Text>
+
+          <Pressable
+            style={styles.contactRow}
             onPress={() => Linking.openURL("mailto:info@booomerangs.ru?subject=Оптовое сотрудничество")}
           >
-            <Text style={styles.ctaBtnText}>Написать нам</Text>
+            <Feather name="mail" size={16} color={colors.mutedForeground} />
+            <Text style={[styles.contactText, { color: colors.foreground }]}>info@booomerangs.ru</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL("tel:+79606000047")}>
-            <Text style={[styles.phone, { color: colors.mutedForeground }]}>+7 (960) 600-00-47</Text>
+
+          <Pressable
+            style={styles.contactRow}
+            onPress={() => Linking.openURL("tel:+79606000047")}
+          >
+            <Feather name="phone" size={16} color={colors.mutedForeground} />
+            <Text style={[styles.contactText, { color: colors.foreground }]}>+7 (960) 600-00-47</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -110,67 +126,64 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, alignItems: "flex-start" },
   title: { fontSize: 17, fontWeight: "700" },
-  hero: { padding: 20, paddingBottom: 8 },
+  hero: { padding: 20, paddingBottom: 4 },
   heroTitle: { fontSize: 24, fontWeight: "800", lineHeight: 32, marginBottom: 10 },
   heroText: { fontSize: 14, lineHeight: 22 },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    paddingHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 12,
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    paddingHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 12,
   },
-  benefits: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 12,
+  features: {
+    paddingHorizontal: 16,
     gap: 10,
   },
-  benefitCard: {
-    width: "47%",
-    borderRadius: 12,
+  featureCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    borderRadius: 14,
     borderWidth: 1,
     padding: 14,
-    gap: 8,
+    gap: 14,
   },
-  benefitIcon: {
+  featureIconWrap: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
-  benefitTitle: { fontSize: 14, fontWeight: "700" },
-  benefitText: { fontSize: 12, lineHeight: 18 },
-  condCard: {
-    marginHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  condRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  condText: { flex: 1, fontSize: 14, lineHeight: 21 },
+  featureTextWrap: { flex: 1, gap: 4 },
+  featureTitle: { fontSize: 14, fontWeight: "700" },
+  featureText: { fontSize: 13, lineHeight: 19 },
   cta: {
     margin: 16,
-    marginTop: 20,
+    marginTop: 24,
     borderRadius: 14,
     borderWidth: 1,
     padding: 20,
+    gap: 10,
     alignItems: "center",
-    gap: 8,
   },
-  ctaTitle: { fontSize: 18, fontWeight: "700" },
+  ctaTitle: { fontSize: 17, fontWeight: "700", textAlign: "center" },
   ctaText: { fontSize: 13, textAlign: "center", lineHeight: 20 },
-  ctaBtn: {
-    marginTop: 8,
+  ctaMainBtn: {
+    marginTop: 4,
     backgroundColor: "#ffffff",
     paddingHorizontal: 28,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 10,
+    width: "100%",
+    alignItems: "center",
   },
-  ctaBtnText: { fontSize: 14, fontWeight: "700", color: "#000000" },
-  phone: { fontSize: 14, marginTop: 4 },
+  ctaMainBtnText: { fontSize: 15, fontWeight: "700", color: "#000000" },
+  divider: { width: "100%", height: 1, marginVertical: 4 },
+  orText: { fontSize: 12 },
+  contactRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  contactText: { fontSize: 14 },
 });
