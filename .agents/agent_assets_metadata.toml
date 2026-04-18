@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "rS8SOuppm4o_HUgcaTTUs"
 uri = "file://artifacts/booomerangs/assets/images/icon.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "0GSvALvPPtOdTO_Cc5t2j"
+uri = "file://attached_assets/icon_compare.png"
+type = "image"
+title = "Сравнение иконок: Было / Стало"
