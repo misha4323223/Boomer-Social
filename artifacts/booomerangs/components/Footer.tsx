@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -29,9 +29,9 @@ const LEGAL_LINKS = [
 ];
 
 const SOCIAL = [
-  { label: "ВКонтакте", icon: "users" as const, url: "https://vk.com/booomerangs" },
-  { label: "Telegram", icon: "send" as const, url: "https://t.me/booomerangs" },
-  { label: "Instagram", icon: "instagram" as const, url: "https://instagram.com/booomerangs" },
+  { label: "ВКонтакте", icon: "vk" as const, iconSet: "fa", url: "https://vk.ru/bmgbrand" },
+  { label: "Telegram", icon: "send" as const, iconSet: "feather", url: "https://t.me/booomerangs" },
+  { label: "Instagram", icon: "instagram" as const, iconSet: "feather", url: "https://www.instagram.com/bmgbrand/" },
 ];
 
 export function Footer() {
@@ -68,7 +68,10 @@ export function Footer() {
               style={({ pressed }) => [styles.socialBtn, { borderColor: colors.border, opacity: pressed ? 0.6 : 1 }]}
               onPress={() => Linking.openURL(s.url)}
             >
-              <Feather name={s.icon} size={18} color={colors.foreground} />
+              {s.iconSet === "fa"
+                ? <FontAwesome name={s.icon as any} size={18} color={colors.foreground} />
+                : <Feather name={s.icon as any} size={18} color={colors.foreground} />
+              }
             </Pressable>
           ))}
         </View>
