@@ -30,7 +30,7 @@ const LEGAL_LINKS = [
 
 const SOCIAL = [
   { label: "ВКонтакте", icon: "vk" as const, iconSet: "fa", url: "https://vk.ru/bmgbrand" },
-  { label: "Telegram", icon: "send" as const, iconSet: "feather", url: "https://t.me/booomerangs" },
+  { label: "Telegram", icon: "send" as const, iconSet: "feather", url: "https://t.me/bmg_booomerangs" },
   { label: "Instagram", icon: "instagram" as const, iconSet: "feather", url: "https://www.instagram.com/bmgbrand/" },
 ];
 
