@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     borderRadius: 16,
     overflow: "hidden",
-    aspectRatio: 9 / 16,
+    height: 520,
     marginBottom: 20,
   },
   videoView: { width: "100%", height: "100%" },
