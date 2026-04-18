@@ -12,13 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 
-const MILESTONES = [
-  { year: "2019", text: "Основание бренда. Первая коллекция носков." },
-  { year: "2020", text: "Запуск интернет-магазина. Более 50 моделей носков." },
-  { year: "2021", text: "Выход в одежду. Первая линейка одежды." },
-  { year: "2022", text: "Коллаборации с российскими музыкантами и художниками." },
-  { year: "2023", text: "Более 200 моделей. Собственное мобильное приложение." },
-];
 
 const VALUES = [
   { icon: "heart" as const, title: "Делаем для себя", text: "Каждую вещь мы носим сами. Это главный критерий качества." },
@@ -67,20 +60,6 @@ export default function AboutScreen() {
               <Feather name={v.icon} size={22} color={colors.foreground} />
               <Text style={[styles.valueTitle, { color: colors.foreground }]}>{v.title}</Text>
               <Text style={[styles.valueText, { color: colors.mutedForeground }]}>{v.text}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* История */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>История бренда</Text>
-        <View style={[styles.timeline, { borderLeftColor: colors.border }]}>
-          {MILESTONES.map((m, i) => (
-            <View key={m.year} style={styles.milestone}>
-              <View style={[styles.dot, { backgroundColor: i === MILESTONES.length - 1 ? "#ffffff" : colors.border }]} />
-              <View style={styles.milestoneContent}>
-                <Text style={[styles.year, { color: colors.foreground }]}>{m.year}</Text>
-                <Text style={[styles.milestoneText, { color: colors.mutedForeground }]}>{m.text}</Text>
-              </View>
             </View>
           ))}
         </View>
@@ -156,29 +135,6 @@ const styles = StyleSheet.create({
   },
   valueTitle: { fontSize: 14, fontWeight: "700" },
   valueText: { fontSize: 12, lineHeight: 18 },
-  timeline: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    paddingLeft: 20,
-    borderLeftWidth: 2,
-    gap: 0,
-  },
-  milestone: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 20,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginLeft: -25,
-    marginTop: 4,
-    marginRight: 15,
-  },
-  milestoneContent: { flex: 1 },
-  year: { fontSize: 15, fontWeight: "800", marginBottom: 2 },
-  milestoneText: { fontSize: 13, lineHeight: 20 },
   contacts: {
     marginHorizontal: 16,
     borderRadius: 14,
