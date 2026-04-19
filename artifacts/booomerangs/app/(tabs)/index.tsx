@@ -397,7 +397,7 @@ export default function HomeScreen() {
       {/* ── MAIN SCROLL ── */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
         {/* HERO */}
         <View style={{ width, height: heroHeight, position: "relative" }}>
