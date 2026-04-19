@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
+import { useFavorites } from "@/context/FavoritesContext";
 import { useColors } from "@/hooks/useColors";
 import api from "@/lib/api";
 import { Category, Product } from "@/lib/types";
@@ -212,6 +213,8 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { totalCount } = useCart();
+  const { favorites } = useFavorites();
+  const favCount = favorites.length;
 
   const [searchVisible, setSearchVisible] = useState(false);
   const [search, setSearch] = useState("");
@@ -346,6 +349,11 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <TouchableOpacity onPress={() => router.push("/(tabs)/favorites")} style={styles.navIconBtn}>
                 <Feather name="heart" size={21} color="#ffffff" />
+                {favCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{favCount > 9 ? "9+" : favCount}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
               <TouchableOpacity onPress={() => router.push("/(tabs)/cart")} style={styles.navIconBtn}>
                 <Feather name="shopping-bag" size={21} color="#ffffff" />
