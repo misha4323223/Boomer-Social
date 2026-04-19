@@ -145,6 +145,16 @@ export function Footer() {
         © {year} Booomerangs. Все права защищены.
       </Text>
 
+      {/* Разработчик */}
+      <Pressable
+        onPress={() => Linking.openURL("https://www.mp-webstudio.ru/")}
+        style={({ pressed }) => [styles.devBadge, { opacity: pressed ? 0.7 : 1 }]}
+      >
+        <Text style={[styles.devText, { color: colors.mutedForeground }]}>Разработано </Text>
+        <Text style={styles.devBrand}>MP Web Studio</Text>
+        <Feather name="external-link" size={11} color="#c8ff00" style={{ marginLeft: 4 }} />
+      </Pressable>
+
     </View>
   );
 }
@@ -240,5 +250,20 @@ const styles = StyleSheet.create({
   copyright: {
     fontSize: 12,
     textAlign: "center",
+    marginBottom: 14,
+  },
+  devBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  devText: {
+    fontSize: 11,
+  },
+  devBrand: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#c8ff00",
+    letterSpacing: 0.3,
   },
 });
