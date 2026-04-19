@@ -421,11 +421,11 @@ export default function HomeScreen() {
           </View>
           <Pressable
             style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.75 }]}
-            onPress={() => router.push("/(tabs)/catalog" as any)}
+            onPress={() => router.push("/artist/molodostvnutri" as any)}
           >
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={styles.heroBtnContent}>
-              <Text style={styles.heroBtnText}>Перейти к коллекции</Text>
+              <Text style={styles.heroBtnText}>Молодость внутри</Text>
               <Feather name="arrow-right" size={13} color="#ffffff" />
             </View>
           </Pressable>
