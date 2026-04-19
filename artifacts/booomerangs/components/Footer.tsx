@@ -8,11 +8,11 @@ import { useColors } from "@/hooks/useColors";
 
 const SITE = "https://booomerangs.ru";
 
-const CATALOG_LINKS = [
-  { label: "Все товары", href: "/(tabs)/catalog", internal: true },
-  { label: "Одежда", href: "/(tabs)/catalog", internal: true },
-  { label: "Носки", href: "/(tabs)/catalog", internal: true },
-  { label: "Аксессуары", href: "/(tabs)/catalog", internal: true },
+const CATALOG_LINKS: { label: string; pathname: string; params?: Record<string, string> }[] = [
+  { label: "Все товары", pathname: "/(tabs)/catalog" },
+  { label: "Одежда", pathname: "/(tabs)/catalog", params: { search: "Одежда" } },
+  { label: "Носки", pathname: "/(tabs)/catalog", params: { search: "Носки" } },
+  { label: "Аксессуары", pathname: "/(tabs)/catalog", params: { search: "Аксессуары" } },
 ];
 
 const INFO_LINKS = [
@@ -45,6 +45,10 @@ export function Footer() {
     } else {
       Linking.openURL(href);
     }
+  };
+
+  const handleCatalogLink = (pathname: string, params?: Record<string, string>) => {
+    router.push({ pathname, params: params ?? {} } as any);
   };
 
   return (
@@ -83,7 +87,7 @@ export function Footer() {
         <View style={styles.column}>
           <Text style={[styles.colTitle, { color: colors.foreground }]}>Каталог</Text>
           {CATALOG_LINKS.map((link) => (
-            <Pressable key={link.label} onPress={() => handleLink(link.href, link.internal)}>
+            <Pressable key={link.label} onPress={() => handleCatalogLink(link.pathname, link.params)}>
               {({ pressed }) => (
                 <Text style={[styles.colLink, { color: pressed ? colors.foreground : colors.mutedForeground }]}>
                   {link.label}
