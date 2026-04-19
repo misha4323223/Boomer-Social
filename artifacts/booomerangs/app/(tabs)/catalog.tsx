@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -64,6 +64,16 @@ export default function CatalogScreen() {
   const [searchVisible, setSearchVisible] = useState(!!(params.search));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (params.category != null) setSelectedCategory(params.category);
+    if (params.subcategory != null) setSelectedSubcategory(params.subcategory);
+    if (params.search != null) {
+      setSearch(params.search);
+      setDebouncedSearch(params.search);
+      setSearchVisible(params.search.length > 0);
+    }
+  }, [params.category, params.subcategory, params.search]);
 
   const drawerAnim = useRef(new Animated.Value(width)).current;
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);

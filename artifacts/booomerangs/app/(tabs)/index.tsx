@@ -629,7 +629,10 @@ export default function HomeScreen() {
                         style={[styles.drawerSubItem, { borderBottomColor: colors.border }]}
                         onPress={() => {
                           closeDrawer();
-                          router.push("/(tabs)/catalog" as any);
+                          router.push({
+                            pathname: "/(tabs)/catalog",
+                            params: { category: key, subcategory: sub.name },
+                          } as any);
                         }}
                       >
                         <View style={[styles.subDot, { backgroundColor: colors.border }]} />
