@@ -26,6 +26,12 @@
       "ios": {
         "distribution": "store"
       }
+    },
+    "rustore": {
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      }
     }
   },
   "submit": {
