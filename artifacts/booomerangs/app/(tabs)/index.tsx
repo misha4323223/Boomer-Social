@@ -214,6 +214,7 @@ export default function HomeScreen() {
   const { totalCount } = useCart();
 
   const [searchVisible, setSearchVisible] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -366,8 +367,17 @@ export default function HomeScreen() {
         </View>
 
         {searchVisible && (
-          <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="search" size={15} color={colors.mutedForeground} />
+          <View
+            style={[
+              styles.searchBar,
+              {
+                backgroundColor: colors.card,
+                borderColor: searchFocused ? "#c8ff00" : colors.border,
+                borderWidth: searchFocused ? 2 : 1,
+              },
+            ]}
+          >
+            <Feather name="search" size={18} color={searchFocused ? "#c8ff00" : colors.mutedForeground} />
             <TextInput
               autoFocus
               style={[styles.searchInput, { color: colors.foreground }]}
@@ -376,11 +386,15 @@ export default function HomeScreen() {
               value={search}
               onChangeText={handleSearchChange}
               onSubmitEditing={handleSearchSubmit}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               returnKeyType="search"
+              underlineColorAndroid="transparent"
+              selectionColor="#c8ff00"
             />
             {search.length > 0 && (
               <Pressable onPress={() => setSearch("")}>
-                <Feather name="x" size={15} color={colors.mutedForeground} />
+                <Feather name="x" size={18} color={colors.mutedForeground} />
               </Pressable>
             )}
           </View>
