@@ -201,7 +201,7 @@ export default function CatalogScreen() {
             <Feather name="search" size={18} color={colors.mutedForeground} />
             <TextInput
               autoFocus
-              style={[styles.searchInput, { color: colors.foreground }]}
+              style={[styles.searchInput, { color: colors.foreground, backgroundColor: "transparent" }]}
               placeholder="Поиск товаров..."
               placeholderTextColor={colors.mutedForeground}
               value={search}
