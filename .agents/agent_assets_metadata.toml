@@ -53,3 +53,9 @@ id = "jbNNMgGP8DI2ipyJZvMfB"
 uri = "file://screenshots/06_favorites.jpg"
 type = "image"
 title = "Избранное"
+
+[[outputs]]
+id = "4Stm9dFslSHjXvI8CrFMb"
+uri = "file://screenshots/icon_rustore_216x216.png"
+type = "image"
+title = "Иконка для RuStore 216×216 px"
