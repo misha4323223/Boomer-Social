@@ -11,3 +11,45 @@ id = "0GSvALvPPtOdTO_Cc5t2j"
 uri = "file://attached_assets/icon_compare.png"
 type = "image"
 title = "Сравнение иконок: Было / Стало"
+
+[[outputs]]
+id = "7H7fojSG7ZVNFdstbvbQR"
+uri = "file://screenshots/01_home.jpg"
+type = "image"
+title = "Главная"
+
+[[outputs]]
+id = "hcHk4TN-N6N0cWUzbCOLq"
+uri = "file://screenshots/02_catalog.jpg"
+type = "image"
+title = "Каталог"
+
+[[outputs]]
+id = "Gc4RUDCJhPgLrFG8o-6j3"
+uri = "file://screenshots/04_profile.jpg"
+type = "image"
+title = "Профиль"
+
+[[outputs]]
+id = "EvdGk4fPsK9XPiLYAfR1U"
+uri = "file://screenshots/07_product.jpg"
+type = "image"
+title = "Карточка товара"
+
+[[outputs]]
+id = "DrJG92-4bSMbekdzyUIp7"
+uri = "file://screenshots/05_chat.jpg"
+type = "image"
+title = "Поддержка"
+
+[[outputs]]
+id = "Om499dI3FTm9F9p-mbeNr"
+uri = "file://screenshots/03_cart.jpg"
+type = "image"
+title = "Корзина"
+
+[[outputs]]
+id = "jbNNMgGP8DI2ipyJZvMfB"
+uri = "file://screenshots/06_favorites.jpg"
+type = "image"
+title = "Избранное"
