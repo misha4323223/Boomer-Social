@@ -28,7 +28,7 @@ const VACANCIES = [
     location: "Удалённо",
     description:
       "Ведение социальных сетей бренда: ВКонтакте, Telegram, Instagram. Создание контента, съёмки, сторис, работа с блогерами.",
-    requirements: ["Опыт ведения соцсетей бренда", "Понимание уличной культуры", "Портфолио"],
+    requirements: ["Опыт ведения соцсетей бренда", "Понимание молодёжных трендов", "Портфолио"],
   },
   {
     title: "Дизайнер одежды",
@@ -36,7 +36,7 @@ const VACANCIES = [
     location: "Тула / Удалённо",
     description:
       "Разработка принтов, коллекций и дизайнов для одежды и аксессуаров. Работа совместно с командой бренда.",
-    requirements: ["Adobe Illustrator / Photoshop", "Понимание трендов streetwear", "Портфолио"],
+    requirements: ["Adobe Illustrator / Photoshop", "Понимание актуальных трендов", "Портфолио"],
   },
 ];
 
@@ -56,7 +56,7 @@ export default function VacanciesScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
         <Text style={[styles.intro, { color: colors.mutedForeground }]}>
-          Мы — молодой российский бренд из Тулы. Ищем людей, которые разделяют нашу страсть к уличной культуре и качественным вещам.
+          Мы — молодой российский бренд из Тулы. Ищем людей, которые разделяют нашу страсть к качественным вещам и смелым идеям.
         </Text>
 
         {VACANCIES.map((vac) => (

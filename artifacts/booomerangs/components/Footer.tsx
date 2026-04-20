@@ -61,7 +61,7 @@ export function Footer() {
         </Text>
         <Text style={[styles.description, { color: colors.mutedForeground }]}>
           Российский бренд одежды и аксессуаров. Смелые дизайны. Качественные материалы.{"\n"}
-          Из Тулы с любовью к уличной культуре.
+          Из Тулы с любовью.
         </Text>
 
         {/* Соцсети */}
