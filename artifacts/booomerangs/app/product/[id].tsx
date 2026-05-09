@@ -215,8 +215,13 @@ export default function ProductScreen() {
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleAddToCart = async () => {
     if (!product) return;
-    const sizes = product.noSize ? [] : (product.sizes ?? []);
-    if (sizes.length > 0 && !selectedSize) return;
+    // Та же логика что и при рендере — учитываем sizeStock для новых товаров
+    const availableSizes =
+      product.noSize ? [] :
+      product.sizes && product.sizes.length > 0 ? product.sizes :
+      product.sizeStock ? Object.keys(product.sizeStock) :
+      [];
+    if (availableSizes.length > 0 && !selectedSize) return;
 
     setAdding(true);
     let sizeToSend: string | undefined = selectedSize ?? undefined;
@@ -324,7 +329,29 @@ export default function ProductScreen() {
   }
 
   const fav = isFavorite(product.id);
-  const sizes = product.noSize ? [] : (product.sizes ?? []);
+
+  // Стандартный порядок размеров
+  const SIZE_ORDER: Record<string, number> = {
+    "3XS": 1, "XXS": 2, "XS": 3, "S": 4, "M": 5, "L": 6,
+    "XL": 7, "XXL": 8, "XXXL": 9, "3XL": 9, "4XL": 10,
+    "XS-S": 3.5, "S-M": 4.5, "M-L": 5.5, "L-XL": 6.5,
+    "40": 11, "42": 12, "44": 13, "46": 14, "48": 15, "50": 16,
+    "52": 17, "54": 18, "56": 19, "58": 20, "60": 21,
+    "One Size": 99,
+  };
+  const sortSizes = (arr: string[]) =>
+    [...arr].sort(
+      (a, b) => (SIZE_ORDER[a] ?? 50) - (SIZE_ORDER[b] ?? 50)
+    );
+
+  // Если sizes пустой — берём ключи из sizeStock (новые товары из 1С)
+  const rawSizes =
+    product.noSize ? [] :
+    product.sizes && product.sizes.length > 0 ? product.sizes :
+    product.sizeStock ? sortSizes(Object.keys(product.sizeStock)) :
+    [];
+  const sizes = rawSizes;
+
   const allImages =
     product.images && product.images.length > 0
       ? product.images
