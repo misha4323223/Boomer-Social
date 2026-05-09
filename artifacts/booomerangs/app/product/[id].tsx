@@ -4,10 +4,11 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   FlatList,
   KeyboardAvoidingView,
@@ -39,7 +40,7 @@ export default function ProductScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { addToCart } = useCart();
+  const { addToCart, totalCount } = useCart();
   const { isFavorite, toggle } = useFavorites();
   const { user } = useAuth();
 
@@ -47,6 +48,9 @@ export default function ProductScreen() {
   const [activeImage, setActiveImage] = useState(0);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+  const [showCartToast, setShowCartToast] = useState(false);
+  const cartToastAnim = useRef(new Animated.Value(0)).current;
+  const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stock notify modal
   const [stockModal, setStockModal] = useState<{ size: string } | null>(null);
@@ -213,6 +217,31 @@ export default function ProductScreen() {
   });
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
+  const hideCartToast = () => {
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current);
+    Animated.timing(cartToastAnim, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowCartToast(false);
+      setAdded(false);
+    });
+  };
+
+  const showToast = () => {
+    setShowCartToast(true);
+    cartToastAnim.setValue(0);
+    Animated.spring(cartToastAnim, {
+      toValue: 1,
+      tension: 65,
+      friction: 9,
+      useNativeDriver: true,
+    }).start();
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current);
+    cartToastTimer.current = setTimeout(hideCartToast, 4500);
+  };
+
   const handleAddToCart = async () => {
     if (!product) return;
     // Та же логика что и при рендере — учитываем sizeStock для новых товаров
@@ -239,7 +268,7 @@ export default function ProductScreen() {
       await addToCart(product.id, sizeToSend, product.color ?? undefined);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
+      showToast();
     } catch (err: any) {
       console.error("[Cart] addToCart error:", err?.response?.data ?? err?.message ?? err);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -792,6 +821,62 @@ export default function ProductScreen() {
         </Pressable>
       </View>
 
+      {/* ─── Cart toast ───────────────────────────────────────────────────── */}
+      {showCartToast && (
+        <Animated.View
+          style={[
+            styles.cartToast,
+            {
+              bottom: insets.bottom + 52 + 12 + 16 + 10,
+              opacity: cartToastAnim,
+              transform: [
+                {
+                  translateY: cartToastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [16, 0],
+                  }),
+                },
+                {
+                  scale: cartToastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.96, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Pressable
+            style={({ pressed }) => [
+              styles.cartToastInner,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+            onPress={() => {
+              hideCartToast();
+              router.push("/(tabs)/cart" as any);
+            }}
+          >
+            <View style={styles.cartToastIconWrap}>
+              <Feather name="shopping-bag" size={21} color="#000" />
+              {totalCount > 0 && (
+                <View style={styles.cartToastBadge}>
+                  <Text style={styles.cartToastBadgeText}>
+                    {totalCount > 99 ? "99+" : totalCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.cartToastBody}>
+              <Text style={styles.cartToastTitle}>Товар добавлен</Text>
+              <Text style={styles.cartToastSub}>Перейти в корзину</Text>
+            </View>
+            <View style={styles.cartToastChevron}>
+              <Feather name="chevron-right" size={20} color="#000" />
+            </View>
+          </Pressable>
+        </Animated.View>
+      )}
+
       {/* ─── Modal: stock notify (guest) ─────────────────────────────────── */}
       <Modal
         visible={!!stockModal}
@@ -1200,4 +1285,67 @@ const styles = StyleSheet.create({
   modalBtnText: { fontSize: 16, fontWeight: "700" },
   modalCancel: { alignItems: "center", paddingVertical: 8 },
   modalCancelText: { fontSize: 14 },
+  cartToast: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  cartToastInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 14,
+  },
+  cartToastIconWrap: {
+    position: "relative",
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartToastBadge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    backgroundColor: "#ff3b30",
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: "#ffffff",
+  },
+  cartToastBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 12,
+  },
+  cartToastBody: {
+    flex: 1,
+    gap: 2,
+  },
+  cartToastTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#000",
+  },
+  cartToastSub: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "400",
+  },
+  cartToastChevron: {
+    opacity: 0.5,
+  },
 });
