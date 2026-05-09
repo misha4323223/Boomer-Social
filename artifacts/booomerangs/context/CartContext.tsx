@@ -32,6 +32,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [sessionId, setSessionId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const sessionIdRef = useRef("");
+  // Держим актуальный список items в ref чтобы обращаться из async-функций
+  const itemsRef = useRef<CartItem[]>([]);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     initSession();
@@ -81,28 +87,49 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = async (itemId: number, quantity: number) => {
-    // Optimistic update (сравниваем через Number, т.к. id может прийти строкой)
+    const sid = sessionIdRef.current || sessionId;
+    const item = itemsRef.current.find((i) => Number(i.id) === Number(itemId));
+
+    // Optimistic update
     setItems((prev) =>
-      prev.map((item) => (Number(item.id) === Number(itemId) ? { ...item, quantity } : item))
+      prev.map((i) => (Number(i.id) === Number(itemId) ? { ...i, quantity } : i))
     );
+
     try {
-      await api.patch(`/cart/${itemId}`, { quantity });
+      // Сервер требует все 4 параметра составного ключа YDB
+      const params = new URLSearchParams({
+        sessionId: sid,
+        productId: String(item?.productId ?? ""),
+        size: item?.size || "One Size",
+        color: item?.color || "Default",
+      });
+      // Правильный путь: /cart/:id/quantity
+      await api.patch(`/cart/${itemId}/quantity?${params.toString()}`, { quantity });
     } catch (e: any) {
       console.error("[Cart] updateQuantity error:", e?.response?.status, e?.response?.data);
+      await fetchCart();
+      return;
     }
     await fetchCart();
   };
 
   const removeItem = async (itemId: number) => {
     const sid = sessionIdRef.current || sessionId;
-    // Optimistic update — убираем сразу из UI без ожидания сервера
-    setItems((prev) => prev.filter((item) => Number(item.id) !== Number(itemId)));
+    const item = itemsRef.current.find((i) => Number(i.id) === Number(itemId));
+
+    // Optimistic update — убираем мгновенно из UI
+    setItems((prev) => prev.filter((i) => Number(i.id) !== Number(itemId)));
+
     try {
-      await api.delete(`/cart/${itemId}`, {
-        params: { sessionId: sid },
-        data: { sessionId: sid },
+      // Сервер требует все 4 параметра составного ключа YDB как query params
+      const params = new URLSearchParams({
+        sessionId: sid,
+        productId: String(item?.productId ?? ""),
+        size: item?.size || "One Size",
+        color: item?.color || "Default",
       });
-      // Успех — состояние уже обновлено оптимистично, не перезагружаем
+      await api.delete(`/cart/${itemId}?${params.toString()}`);
+      // Успешно — состояние уже обновлено оптимистично
     } catch (e: any) {
       const status = e?.response?.status;
       console.error(
@@ -110,11 +137,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         "status:", status,
         "data:", JSON.stringify(e?.response?.data),
         "itemId:", itemId,
-        "sessionId:", sid
+        "sessionId:", sid,
+        "productId:", item?.productId,
+        "size:", item?.size,
+        "color:", item?.color
       );
-      // 404 — товар уже удалён на сервере, всё ок
+      // 404 — товар уже удалён, всё ок
       if (status === 404) return;
-      // Иная ошибка сервера — восстанавливаем список из сервера
+      // Иная ошибка — восстанавливаем список с сервера
       await fetchCart();
     }
   };
