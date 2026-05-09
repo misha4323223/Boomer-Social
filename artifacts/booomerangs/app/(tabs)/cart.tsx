@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -12,6 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Reanimated, {
   runOnJS,
@@ -154,7 +154,7 @@ function SwipeableCartItem({ item, colors, updateQuantity, removeItem }: CartIte
 
 export default function CartScreen() {
   const colors = useColors();
-  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const { items, isLoading, updateQuantity, removeItem } = useCart();
 
   const total = items.reduce((sum, item) => {
@@ -197,7 +197,7 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: tabBarHeight }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <CompactHeader title="Корзина" />
       <FlatList
         data={items}
@@ -219,7 +219,7 @@ export default function CartScreen() {
           {
             backgroundColor: colors.background,
             borderTopColor: colors.border,
-            paddingBottom: 16,
+            paddingBottom: Math.max(insets.bottom, 16),
           },
         ]}
       >

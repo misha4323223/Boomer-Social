@@ -71,12 +71,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = async (itemId: number, quantity: number) => {
-    await api.patch(`/cart/${itemId}`, { quantity });
+    try {
+      await api.patch(`/cart/${itemId}`, { quantity });
+    } catch {
+      // ignore patch error, still refetch
+    }
     await fetchCart();
   };
 
   const removeItem = async (itemId: number) => {
-    await api.delete(`/cart/${itemId}`);
+    try {
+      await api.delete(`/cart/${itemId}`);
+    } catch {
+      // ignore delete error, still refetch
+    }
     await fetchCart();
   };
 

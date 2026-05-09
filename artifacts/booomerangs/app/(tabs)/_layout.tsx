@@ -1,14 +1,15 @@
 import { Feather } from "@expo/vector-icons";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, usePathname, useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useColors } from "@/hooks/useColors";
-
 function ChatFab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+
+  if (pathname !== "/") return null;
 
   return (
     <Pressable
