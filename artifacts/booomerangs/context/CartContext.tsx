@@ -90,9 +90,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const sid = sessionIdRef.current || sessionId;
     const item = itemsRef.current.find((i) => Number(i.id) === Number(itemId));
 
-    // Optimistic update
+    const targetProductId = item?.productId;
+    const targetSize = item?.size || "One Size";
+    const targetColor = item?.color || "Default";
+
+    // Optimistic update — обновляем только конкретную позицию по составному ключу
     setItems((prev) =>
-      prev.map((i) => (Number(i.id) === Number(itemId) ? { ...i, quantity } : i))
+      prev.map((i) =>
+        Number(i.productId) === Number(targetProductId) &&
+        (i.size || "One Size") === targetSize &&
+        (i.color || "Default") === targetColor
+          ? { ...i, quantity }
+          : i
+      )
     );
 
     try {
@@ -117,19 +127,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const sid = sessionIdRef.current || sessionId;
     const item = itemsRef.current.find((i) => Number(i.id) === Number(itemId));
 
-    // Optimistic update — убираем мгновенно из UI
-    setItems((prev) => prev.filter((i) => Number(i.id) !== Number(itemId)));
+    const targetProductId = item?.productId;
+    const targetSize = item?.size || "One Size";
+    const targetColor = item?.color || "Default";
+
+    // Optimistic update — убираем только конкретную позицию по составному ключу (productId + size + color)
+    // НЕ по item.id, т.к. id может совпадать с productId и быть одинаковым для разных размеров
+    setItems((prev) =>
+      prev.filter((i) =>
+        !(
+          Number(i.productId) === Number(targetProductId) &&
+          (i.size || "One Size") === targetSize &&
+          (i.color || "Default") === targetColor
+        )
+      )
+    );
 
     try {
       // Сервер требует все 4 параметра составного ключа YDB как query params
       const params = new URLSearchParams({
         sessionId: sid,
-        productId: String(item?.productId ?? ""),
-        size: item?.size || "One Size",
-        color: item?.color || "Default",
+        productId: String(targetProductId ?? ""),
+        size: targetSize,
+        color: targetColor,
       });
       await api.delete(`/cart/${itemId}?${params.toString()}`);
-      // Успешно — состояние уже обновлено оптимистично
     } catch (e: any) {
       const status = e?.response?.status;
       console.error(
@@ -138,9 +160,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         "data:", JSON.stringify(e?.response?.data),
         "itemId:", itemId,
         "sessionId:", sid,
-        "productId:", item?.productId,
-        "size:", item?.size,
-        "color:", item?.color
+        "productId:", targetProductId,
+        "size:", targetSize,
+        "color:", targetColor
       );
       // 404 — товар уже удалён, всё ок
       if (status === 404) return;
