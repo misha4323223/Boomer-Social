@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "ru.booomerangs.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "softwareKeyboardLayoutMode": "pan",
       "minSdkVersion": 26,
       "adaptiveIcon": {
@@ -50,7 +50,10 @@
       "reactCompiler": true
     },
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "5dd9cb64-b15a-4331-90b4-561f43c95403"
+      }
+    },
+    "owner": "misha1900"
   }
 }
