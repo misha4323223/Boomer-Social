@@ -30,7 +30,13 @@
     "rustore": {
       "android": {
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
+        "credentialsSource": "local"
+      }
+    },
+    "rustore-apk": {
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "local"
       }
     }
   },
