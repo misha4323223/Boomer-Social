@@ -272,9 +272,29 @@ export default function HomeScreen() {
   const { data: newArrivals, isLoading: newArrivalsLoading } = useQuery<Product[]>({
     queryKey: ["new-arrivals-home"],
     queryFn: async () => {
-      const res = await api.get("/products", { params: { isNew: true, limit: 16 } });
-      const products: Product[] = res.data?.products ?? res.data ?? [];
-      return products.slice(0, 16);
+      const [settingsRes, productsRes] = await Promise.all([
+        api.get("/page-settings/home"),
+        api.get("/products", { params: { isNew: true, limit: 60 } }),
+      ]);
+
+      const popular = settingsRes.data?.popular ?? {};
+      const mode: string = popular.mode ?? "auto";
+      const count = parseInt(popular.count ?? "16", 10) || 16;
+      const pinnedIds: number[] = popular.pinnedProductIds ?? [];
+
+      const products: Product[] = productsRes.data?.products ?? productsRes.data ?? [];
+
+      if (mode === "manual" && pinnedIds.length > 0) {
+        const productMap = new Map(products.map((p: Product) => [p.id, p]));
+        const sorted = pinnedIds
+          .filter((id) => productMap.has(id))
+          .map((id) => productMap.get(id)!);
+        const pinnedSet = new Set(pinnedIds);
+        const rest = products.filter((p: Product) => !pinnedSet.has(p.id));
+        return [...sorted, ...rest].slice(0, count);
+      }
+
+      return products.slice(0, count);
     },
     staleTime: 5 * 60 * 1000,
   });
