@@ -223,6 +223,7 @@ export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
+  const [newArrivalsVisible, setNewArrivalsVisible] = useState(8);
 
   const drawerAnim = useRef(new Animated.Value(width)).current;
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -291,10 +292,10 @@ export default function HomeScreen() {
           .map((id) => productMap.get(id)!);
         const pinnedSet = new Set(pinnedIds);
         const rest = products.filter((p: Product) => !pinnedSet.has(p.id));
-        return [...sorted, ...rest].slice(0, count);
+        return [...sorted, ...rest];
       }
 
-      return products.slice(0, count);
+      return products;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -477,18 +478,37 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={{ paddingHorizontal: 12, paddingTop: 12 }}>
-              {Array.from({ length: Math.ceil(newArrivals.length / 2) }, (_, rowIdx) => (
-                <View
-                  key={rowIdx}
-                  style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}
+              {Array.from(
+                { length: Math.ceil(Math.min(newArrivalsVisible, newArrivals.length) / 2) },
+                (_, rowIdx) => (
+                  <View
+                    key={rowIdx}
+                    style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}
+                  >
+                    {newArrivals
+                      .slice(0, newArrivalsVisible)
+                      .slice(rowIdx * 2, rowIdx * 2 + 2)
+                      .map((item) => (
+                        <View key={item.id} style={{ width: cardWidth }}>
+                          <ProductCard product={item} />
+                        </View>
+                      ))}
+                  </View>
+                )
+              )}
+
+              {newArrivalsVisible < newArrivals.length && (
+                <TouchableOpacity
+                  style={[styles.showMoreBtn, { borderColor: colors.border }]}
+                  onPress={() => setNewArrivalsVisible((v) => v + 8)}
+                  activeOpacity={0.7}
                 >
-                  {newArrivals.slice(rowIdx * 2, rowIdx * 2 + 2).map((item) => (
-                    <View key={item.id} style={{ width: cardWidth }}>
-                      <ProductCard product={item} />
-                    </View>
-                  ))}
-                </View>
-              ))}
+                  <Text style={[styles.showMoreText, { color: colors.foreground }]}>
+                    Смотреть ещё
+                  </Text>
+                  <Feather name="chevron-down" size={16} color={colors.foreground} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>
@@ -795,6 +815,18 @@ const styles = StyleSheet.create({
   sectionLink: { fontSize: 13 },
   sectionSubtitle: { fontSize: 13, paddingHorizontal: 16, marginBottom: 14 },
   loader: { padding: 32, alignItems: "center" },
+  showMoreBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  showMoreText: { fontSize: 15, fontWeight: "600", letterSpacing: 0.2 },
 
   /* Артисты — горизонтальная карусель */
   artistsRow: {
